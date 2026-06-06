@@ -1,0 +1,1 @@
+export const gym_name = "Ella's Fitness centre"
