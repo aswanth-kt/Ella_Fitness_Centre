@@ -5,7 +5,7 @@ import {
   User as UserIcon, Calendar, CreditCard, Shield, Phone, MapPin, 
   Heart, CheckCircle, AlertTriangle, AlertCircle, Edit3, Loader, CheckSquare 
 } from 'lucide-react';
-import axios from 'axios';
+import axios from '../api/axios.js';
 
 const ClientDashboard = () => {
   const { user, updateProfile, refreshUser } = useContext(AuthContext);

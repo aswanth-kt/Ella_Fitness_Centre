@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Users, CheckCircle, CheckCircle2, AlertTriangle, Calendar, IndianRupee, Search, SlidersHorizontal, Edit3, Trash2, Loader, RefreshCw, Send, Eye, FileText, AlertCircle } from 'lucide-react';
-import axios from 'axios';
+import axios from '../api/axios.js';
 import { 
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend 

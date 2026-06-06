@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { Dumbbell, CheckCircle2, Loader, CreditCard, ShieldCheck, AlertCircle } from 'lucide-react';
-import axios from 'axios';
+import axios from '../api/axios.js';
 
 const PlansPage = () => {
   const { user, refreshUser } = useContext(AuthContext);
