@@ -15,7 +15,9 @@ const RegisterPage = () => {
     address: '',
     emergencyContact: '',
     password: '',
-    role: 'client' // 'client' or 'admin'
+    role: 'client', // 'client' or 'admin'
+    height: '',
+    weight: ''
   });
   
   const [error, setError] = useState('');
@@ -204,6 +206,36 @@ const RegisterPage = () => {
                   <option value="female" className="bg-deep-black">Female</option>
                   <option value="other" className="bg-deep-black">Other</option>
                 </select>
+              </div>
+
+              {/* Height */}
+              <div>
+                <label className="block text-xs font-bold tracking-wider text-gray-400 uppercase mb-2">
+                  Height (cm)
+                </label>
+                <input
+                  type="number"
+                  name="height"
+                  value={formData.height}
+                  onChange={handleChange}
+                  className="block w-full px-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-colors text-sm"
+                  placeholder="e.g., 175"
+                />
+              </div>
+
+              {/* Weight */}
+              <div>
+                <label className="block text-xs font-bold tracking-wider text-gray-400 uppercase mb-2">
+                  Weight (kg)
+                </label>
+                <input
+                  type="number"
+                  name="weight"
+                  value={formData.weight}
+                  onChange={handleChange}
+                  className="block w-full px-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-colors text-sm"
+                  placeholder="e.g., 70"
+                />
               </div>
 
               {/* Emergency Contact */}

@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { 
   User as UserIcon, Calendar, CreditCard, Shield, Phone, MapPin, 
-  Heart, CheckCircle, AlertTriangle, AlertCircle, Edit3, Loader, CheckSquare 
+  Heart, CheckCircle, AlertTriangle, AlertCircle, Edit3, Loader, CheckSquare,
+  ShieldCheck, CheckCircle2
 } from 'lucide-react';
 import axios from '../api/axios.js';
-import { gym_first_name } from '../constants/constants.js';
+import { gym_first_name, gym_second_name } from '../constants/constants';
 
 const ClientDashboard = () => {
   const { user, updateProfile, refreshUser } = useContext(AuthContext);
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Data states
   const [payments, setPayments] = useState([]);
@@ -27,10 +29,25 @@ const ClientDashboard = () => {
     gender: 'male',
     address: '',
     emergencyContact: '',
-    password: ''
+    password: '',
+    height: '',
+    weight: ''
   });
   const [editError, setEditError] = useState('');
   const [editLoading, setEditLoading] = useState(false);
+
+  // Membership Renewal states
+  const [showRenewalModal, setShowRenewalModal] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState('');
+  const [renewalError, setRenewalError] = useState('');
+  const [showSimulator, setShowSimulator] = useState(false);
+  const [simData, setSimData] = useState(null);
+
+  const plansList = [
+    { id: 'starter', name: 'Starter Plan', duration: '1 Month', price: 1500, benefits: ['Full gym access during hours', 'Locker & steam room access', '1 Complementary physical assessment'] },
+    { id: 'standard', name: 'Standard Plan', duration: '3 Months', price: 4000, benefits: ['All Starter plan perks', '2 Personal training guidance sessions', 'Custom nutrition guidance manual'] },
+    { id: 'premium', name: 'Premium Plan', duration: '6 Months', price: 7000, benefits: ['All Standard plan perks', 'Priority personal training guidance', 'VIP lounge access'] }
+  ];
 
   // Initialize edit form when user loads
   useEffect(() => {
@@ -42,7 +59,9 @@ const ClientDashboard = () => {
         gender: user.gender || 'male',
         address: user.address || '',
         emergencyContact: user.emergencyContact || '',
-        password: ''
+        password: '',
+        height: user.height || '',
+        weight: user.weight || ''
       });
     }
   }, [user, isEditing]);
@@ -51,33 +70,147 @@ const ClientDashboard = () => {
   useEffect(() => {
     if (location.state?.paymentSuccess) {
       setSuccessMsg(`Membership activated successfully! Welcome to the ${gym_first_name} family.`);
-      // Clean up router state
       window.history.replaceState({}, document.title);
     }
   }, [location]);
 
   // Fetch payments and attendance logs
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        const [payRes, attRes] = await Promise.all([
-          axios.get('/payments/my-payments'),
-          axios.get('/attendance/my-attendance')
-        ]);
-        setPayments(payRes.data);
-        setAttendance(attRes.data);
-      } catch (err) {
-        console.error('Error fetching dashboard info:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const [payRes, attRes] = await Promise.all([
+        axios.get('/payments/my-payments'),
+        axios.get('/attendance/my-attendance')
+      ]);
+      console.log("payRes:", payRes)
+      setPayments(payRes.data);
+      setAttendance(attRes.data);
+    } catch (err) {
+      console.error('Error fetching dashboard info:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (user) {
       fetchDashboardData();
     }
   }, [user]);
+
+  // Dynamically load Razorpay SDK script
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleRenewalPurchase = async (planId) => {
+    setLoadingPlan(planId);
+    setRenewalError('');
+
+    try {
+      // Create order in backend
+      const { data: orderData } = await axios.post('/payments/order', { planName: planId });
+
+      if (orderData.isMock) {
+        setSimData(orderData);
+        setShowSimulator(true);
+        setLoadingPlan('');
+        return;
+      }
+
+      // Load Razorpay SDK
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        // Fallback to simulator
+        setSimData(orderData);
+        setShowSimulator(true);
+        setLoadingPlan('');
+        return;
+      }
+
+      // Launch Razorpay checkout
+      const options = {
+        key: orderData.key,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: `${gym_first_name} Noida`,
+        description: `Renewal activation of ${planId.toUpperCase()} membership plan`,
+        order_id: orderData.id,
+        handler: async (response) => {
+          try {
+            const verifyPayload = {
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+              planName: planId,
+              isMock: false
+            };
+
+            await axios.post('/payments/verify', verifyPayload);
+            await refreshUser();
+            setShowRenewalModal(false);
+            setSuccessMsg('Membership renewed and extended successfully!');
+            fetchDashboardData();
+          } catch (err) {
+            setRenewalError(err.response?.data?.message || 'Payment verification failed.');
+          }
+        },
+        prefill: {
+          name: user.name,
+          email: user.email,
+          contact: user.mobile
+        },
+        theme: {
+          color: '#D4AF37'
+        }
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+
+    } catch (err) {
+      console.error(err);
+      setRenewalError(err.response?.data?.message || 'Error processing renewal.');
+    } finally {
+      setLoadingPlan('');
+    }
+  };
+
+  const executeSimulatedPayment = async (status) => {
+    if (status === 'fail') {
+      setShowSimulator(false);
+      setRenewalError('Payment failed by simulated user.');
+      return;
+    }
+
+    setLoadingPlan(simData.plan);
+    setShowSimulator(false);
+
+    try {
+      const verifyPayload = {
+        razorpayOrderId: simData.id,
+        razorpayPaymentId: `pay_sim_${Math.random().toString(36).substring(2, 10)}`,
+        planName: simData.plan,
+        isMock: true
+      };
+
+      await axios.post('/payments/verify', verifyPayload);
+      await refreshUser();
+      setShowRenewalModal(false);
+      setSuccessMsg('Membership renewed and extended successfully!');
+      fetchDashboardData();
+    } catch (err) {
+      setRenewalError(err.response?.data?.message || 'Verification of simulated payment failed.');
+    } finally {
+      setLoadingPlan('');
+    }
+  };
 
   // Remaining days math helper
   const getRemainingDays = () => {
@@ -108,6 +241,7 @@ const ClientDashboard = () => {
   };
 
   const remainingDays = getRemainingDays();
+  console.log("Payment:", payments)
   const lastPayment = payments.find(p => p.status === 'paid');
 
   if (loading) {
@@ -135,6 +269,12 @@ const ClientDashboard = () => {
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-white">Member Dashboard</h1>
             <p className="text-gray-400 text-sm mt-1">Hello, {user?.name}. Monitor your training check-ins and renewals.</p>
+            {user && (user.height || user.weight) && (
+              <div className="flex space-x-6 mt-3 text-xs bg-gold/10 text-gold px-4 py-2 rounded-xl border border-gold/15 w-fit">
+                {user.height && <span>Height: <strong className="text-white font-bold">{user.height} cm</strong></span>}
+                {user.weight && <span>Weight: <strong className="text-white font-bold">{user.weight} kg</strong></span>}
+              </div>
+            )}
           </div>
           <button
             onClick={() => setIsEditing(!isEditing)}
@@ -151,12 +291,12 @@ const ClientDashboard = () => {
             {/* Overview Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               
-              {/* Membership Summary Card */}
-              <div className="glass-premium rounded-2xl p-6 border border-gold/15 relative overflow-hidden flex flex-col justify-between min-h-[180px]">
+              {/* Membership Summary Card (Includes Expiry, Plan, Renewal Trigger, Renewal Status) */}
+              <div className="glass-premium rounded-2xl p-6 border border-gold/15 relative overflow-hidden flex flex-col justify-between min-h-[220px]">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-gold/5 rounded-full blur-xl"></div>
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="text-xs text-gray-400 font-bold uppercase tracking-wider block">CURRENT TIERS</span>
+                    <span className="text-xs text-gray-400 font-bold uppercase tracking-wider block">CURRENT PLAN</span>
                     <h3 className="text-2xl font-bold text-white mt-1 capitalize">
                       {user?.membership?.plan === 'none' ? 'No Active Plan' : `${user?.membership?.plan} Plan`}
                     </h3>
@@ -170,30 +310,44 @@ const ClientDashboard = () => {
                   </div>
                 </div>
                 
-                <div className="mt-6 border-t border-white/5 pt-4">
-                  {user?.membership?.status === 'active' ? (
-                    <div className="flex justify-between items-end">
-                      <div>
-                        <span className="text-[10px] text-gray-400 block uppercase">EXPIRY DATE</span>
-                        <span className="text-sm font-semibold text-white mt-0.5">
-                          {new Date(user.membership.endDate).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[20px] font-black text-gold">{remainingDays}</span>
-                        <span className="text-[10px] text-gray-400 block uppercase">Days Left</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-sm text-red-400">
-                      Access Restricted. Please purchase a membership.
-                    </div>
-                  )}
+                <div className="mt-4 grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <span className="text-gray-400 block uppercase">EXPIRY DATE</span>
+                    <span className="text-white font-semibold mt-0.5 block">
+                      {user?.membership?.endDate ? new Date(user.membership.endDate).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400 block uppercase">RENEWAL STATUS</span>
+                    <span className={`font-bold mt-0.5 block ${
+                      user?.membership?.status === 'active' 
+                        ? remainingDays <= 7 ? 'text-yellow-400 animate-pulse' : 'text-emerald-400'
+                        : 'text-red-400'
+                    }`}>
+                      {user?.membership?.status === 'active' 
+                        ? remainingDays <= 7 ? 'Needs Renewal' : 'Active'
+                        : 'Expired'
+                      }
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-4 border-t border-white/5 pt-4 flex justify-between items-center">
+                  <div>
+                    <span className="text-[20px] font-black text-gold">{remainingDays}</span>
+                    <span className="text-[10px] text-gray-400 ml-1.5 uppercase">Days Left</span>
+                  </div>
+                  <button
+                    onClick={() => setShowRenewalModal(true)}
+                    className="bg-gold hover:bg-gold-hover text-deep-black font-extrabold text-[10px] tracking-wider px-4 py-2 rounded-full cursor-pointer uppercase shadow-md shadow-gold/15"
+                  >
+                    Renew Membership
+                  </button>
                 </div>
               </div>
 
               {/* Attendance Card */}
-              <div className="glass-premium rounded-2xl p-6 border border-gold/15 relative overflow-hidden flex flex-col justify-between min-h-[180px]">
+              <div className="glass-premium rounded-2xl p-6 border border-gold/15 relative overflow-hidden flex flex-col justify-between min-h-[220px]">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-premium-yellow/5 rounded-full blur-xl"></div>
                 <div className="flex justify-between items-start">
                   <div>
@@ -218,7 +372,7 @@ const ClientDashboard = () => {
               </div>
 
               {/* Last Invoiced Card */}
-              <div className="glass-premium rounded-2xl p-6 border border-gold/15 relative overflow-hidden flex flex-col justify-between min-h-[180px]">
+              <div className="glass-premium rounded-2xl p-6 border border-gold/15 relative overflow-hidden flex flex-col justify-between min-h-[220px]">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-xl"></div>
                 <div className="flex justify-between items-start">
                   <div>
@@ -262,7 +416,7 @@ const ClientDashboard = () => {
               <div className="glass-premium rounded-2xl border border-gold/15 p-6 lg:col-span-2 space-y-6">
                 <div>
                   <h3 className="text-lg font-bold text-white">Attendance Logs</h3>
-                  <p className="text-xs text-gray-400 mt-1">Logs representing your morning and evening session check-ins.</p>
+                  <p className="text-xs text-gray-400 mt-1">Logs representing your daily check-in sessions.</p>
                 </div>
                 
                 <div className="overflow-x-auto">
@@ -270,51 +424,35 @@ const ClientDashboard = () => {
                     <thead>
                       <tr className="border-b border-white/10 text-xs text-gray-400 font-bold uppercase tracking-wider">
                         <th className="py-4">Date</th>
-                        <th className="py-4">Morning Session</th>
-                        <th className="py-4">Evening Session</th>
-                        <th className="py-4">Day Status</th>
+                        <th className="py-4">Session Attended</th>
+                        <th className="py-4">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5 text-sm text-gray-300">
                       {attendance.history.length === 0 ? (
                         <tr>
-                          <td colSpan="4" className="py-6 text-center text-gray-500 text-xs">
+                          <td colSpan="3" className="py-6 text-center text-gray-500 text-xs">
                             No attendance records logged yet. Contact admin to mark attendance.
                           </td>
                         </tr>
                       ) : (
-                        attendance.history.map((record) => {
-                          const morningPresent = record.morningStatus === 'present';
-                          const eveningPresent = record.eveningStatus === 'present';
-                          const dayStatus = (morningPresent || eveningPresent) ? 'Present' : 'Absent';
-
-                          return (
-                            <tr key={record._id} className="hover:bg-white/5 transition-colors">
-                              <td className="py-4 font-medium">
-                                {new Date(record.date).toLocaleDateString()}
-                              </td>
-                              <td className="py-4 capitalize">
-                                <span className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${
-                                  record.morningStatus === 'present' ? 'bg-emerald-500' : record.morningStatus === 'absent' ? 'bg-red-500' : 'bg-gray-500'
-                                }`}></span>
-                                {record.morningStatus}
-                              </td>
-                              <td className="py-4 capitalize">
-                                <span className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${
-                                  record.eveningStatus === 'present' ? 'bg-emerald-500' : record.eveningStatus === 'absent' ? 'bg-red-500' : 'bg-gray-500'
-                                }`}></span>
-                                {record.eveningStatus}
-                              </td>
-                              <td className="py-4">
-                                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
-                                  dayStatus === 'Present' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
-                                }`}>
-                                  {dayStatus.toUpperCase()}
-                                </span>
-                              </td>
-                            </tr>
-                          );
-                        })
+                        attendance.history.map((record) => (
+                          <tr key={record._id} className="hover:bg-white/5 transition-colors">
+                            <td className="py-4 font-medium">
+                              {new Date(record.date).toLocaleDateString()}
+                            </td>
+                            <td className="py-4 capitalize font-semibold text-white">
+                              {record.session}
+                            </td>
+                            <td className="py-4">
+                              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${
+                                record.status === 'Present' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                              }`}>
+                                {record.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
                       )}
                     </tbody>
                   </table>
@@ -352,6 +490,7 @@ const ClientDashboard = () => {
                           <div>
                             <span className="text-[10px] text-gray-400 block">ID: {p.razorpayOrderId}</span>
                             {p.razorpayPaymentId && <span className="text-[9px] text-gray-500 block">Txn: {p.razorpayPaymentId}</span>}
+                            {p.paymentMethod && <span className="text-[9px] text-gold/80 block uppercase mt-0.5">{p.paymentMethod}</span>}
                           </div>
                           <span className="text-white font-extrabold text-sm">₹{p.amount}</span>
                         </div>
@@ -364,7 +503,7 @@ const ClientDashboard = () => {
             </div>
           </div>
         ) : (
-          /* PROFILE EDIT VIEW */
+          /* PROFILE EDIT VIEW (Includes Height & Weight Fields) */
           <div className="max-w-2xl mx-auto glass-premium rounded-2xl p-8 border border-gold/15">
             <h3 className="text-xl font-bold text-white mb-6">Modify Profile Settings</h3>
             
@@ -444,6 +583,28 @@ const ClientDashboard = () => {
                     className="block w-full px-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-colors text-sm"
                   />
                 </div>
+                {/* Height */}
+                <div>
+                  <label className="block text-xs font-bold tracking-wider text-gray-400 uppercase mb-2">Height (cm)</label>
+                  <input
+                    type="number"
+                    value={editForm.height}
+                    onChange={(e) => setEditForm({ ...editForm, height: e.target.value })}
+                    placeholder="e.g. 175"
+                    className="block w-full px-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-colors text-sm"
+                  />
+                </div>
+                {/* Weight */}
+                <div>
+                  <label className="block text-xs font-bold tracking-wider text-gray-400 uppercase mb-2">Weight (kg)</label>
+                  <input
+                    type="number"
+                    value={editForm.weight}
+                    onChange={(e) => setEditForm({ ...editForm, weight: e.target.value })}
+                    placeholder="e.g. 70"
+                    className="block w-full px-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-colors text-sm"
+                  />
+                </div>
               </div>
 
               {/* Address */}
@@ -496,6 +657,116 @@ const ClientDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* RENEW MEMBERSHIP PLAN SELECTOR MODAL */}
+      {showRenewalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm overflow-y-auto">
+          <div className="glass-premium border-gold/30 rounded-3xl max-w-4xl w-full p-8 space-y-6 my-8 animate-fade-in-up">
+            <div className="flex justify-between items-center border-b border-gold/10 pb-4">
+              <h3 className="text-xl font-bold text-white flex items-center space-x-2">
+                <CreditCard className="h-5 w-5 text-gold" />
+                <span>Extend & Renew Membership Subscription</span>
+              </h3>
+              <button 
+                onClick={() => setShowRenewalModal(false)}
+                className="text-gray-400 hover:text-white font-bold text-sm p-1.5"
+              >
+                CLOSE
+              </button>
+            </div>
+
+            {renewalError && (
+              <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl p-4 flex items-start space-x-3">
+                <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                <span>{renewalError}</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {plansList.map((plan) => (
+                <div key={plan.id} className="border border-gold/15 bg-dark-gray/30 p-6 rounded-2xl flex flex-col justify-between hover:border-gold/30 transition-all">
+                  <div>
+                    <h4 className="text-lg font-bold text-white capitalize">{plan.name}</h4>
+                    <span className="text-xs text-gold uppercase tracking-wider block mt-1">{plan.duration}</span>
+                    <div className="text-2xl font-extrabold text-white my-4">₹{plan.price}</div>
+                    
+                    <ul className="space-y-2 text-xs text-gray-400 border-t border-white/5 pt-4">
+                      {plan.benefits.map((b, idx) => (
+                        <li key={idx} className="flex items-center space-x-2">
+                          <span className="w-1.5 h-1.5 bg-gold rounded-full shrink-0"></span>
+                          <span className="truncate">{b}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <button
+                    disabled={loadingPlan !== ''}
+                    onClick={() => handleRenewalPurchase(plan.id)}
+                    className="w-full mt-6 py-2.5 bg-gradient-to-r from-premium-yellow to-gold text-deep-black font-bold text-xs tracking-wider rounded-xl hover:scale-[1.02] transition-transform cursor-pointer"
+                  >
+                    {loadingPlan === plan.id ? 'PROCESSING...' : 'ACTIVATE'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Simulator Modal */}
+      {showSimulator && simData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="glass-premium border-gold/30 rounded-3xl max-w-md w-full p-8 space-y-6 text-center animate-fade-in-up">
+            <div className="mx-auto bg-gold/10 text-gold w-fit p-4 rounded-full">
+              <CreditCard className="h-10 w-10" />
+            </div>
+            
+            <div>
+              <h3 className="text-2xl font-bold text-white">Razorpay Sandbox</h3>
+              <p className="text-sm text-gray-400 mt-2">
+                Simulating payments checkout for {simData.plan.toUpperCase()} Membership.
+              </p>
+            </div>
+
+            <div className="bg-black/50 border border-gold/15 p-4 rounded-xl text-left space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Order ID:</span>
+                <span className="text-white font-mono">{simData.id}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Amount:</span>
+                <span className="text-gold font-bold">₹{simData.amount / 100} INR</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">User Prefill:</span>
+                <span className="text-white">{user?.name}</span>
+              </div>
+            </div>
+
+            <div className="bg-gold/5 border border-gold/15 rounded-xl p-3 text-xs text-gray-300 text-left flex items-start space-x-2">
+              <ShieldCheck className="h-4 w-4 text-gold shrink-0 mt-0.5" />
+              <span>We detected mock key modes. Complete testing checkout by selecting a state below.</span>
+            </div>
+
+            <div className="flex flex-col space-y-3 pt-2">
+              <button
+                onClick={() => executeSimulatedPayment('success')}
+                className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-xs tracking-wider rounded-xl hover:scale-[1.02] transition-transform cursor-pointer"
+              >
+                SIMULATE PAYMENT SUCCESS
+              </button>
+              <button
+                onClick={() => executeSimulatedPayment('fail')}
+                className="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs tracking-wider rounded-xl transition-colors cursor-pointer"
+              >
+                SIMULATE PAYMENT FAILURE
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

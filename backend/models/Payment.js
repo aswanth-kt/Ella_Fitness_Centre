@@ -7,6 +7,8 @@ const paymentSchema = new mongoose.Schema(
     razorpayOrderId: { type: String, required: true },
     razorpayPaymentId: { type: String },
     status: { type: String, enum: ['pending', 'paid', 'failed'], default: 'pending' },
+    paymentMethod: { type: String, enum: ['Online Transaction', 'Cash Transaction'], default: 'Online Transaction' },
+    membershipPlan: { type: String },
     paidAt: { type: Date }
   },
   { timestamps: true }

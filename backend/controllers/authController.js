@@ -12,7 +12,7 @@ const generateToken = (id) => {
 // @route   POST /api/auth/register
 // @access  Public
 export const registerUser = async (req, res) => {
-  const { name, email, mobile, password, age, gender, address, emergencyContact, role } = req.body;
+  const { name, email, mobile, password, age, gender, address, emergencyContact, role, height, weight } = req.body;
 
   try {
     const userExists = await User.findOne({ email });
@@ -34,6 +34,8 @@ export const registerUser = async (req, res) => {
       gender,
       address,
       emergencyContact,
+      height: height ? Number(height) : undefined,
+      weight: weight ? Number(weight) : undefined,
       membership: {
         plan: 'none',
         status: 'none',
@@ -103,6 +105,8 @@ export const getUserProfile = async (req, res) => {
         gender: user.gender,
         address: user.address,
         emergencyContact: user.emergencyContact,
+        height: user.height,
+        weight: user.weight,
         membership: user.membership,
       });
     } else {
@@ -127,6 +131,8 @@ export const updateUserProfile = async (req, res) => {
       user.gender = req.body.gender || user.gender;
       user.address = req.body.address || user.address;
       user.emergencyContact = req.body.emergencyContact || user.emergencyContact;
+      user.height = req.body.height !== undefined ? Number(req.body.height) : user.height;
+      user.weight = req.body.weight !== undefined ? Number(req.body.weight) : user.weight;
 
       if (req.body.password) {
         user.password = req.body.password;
@@ -144,6 +150,8 @@ export const updateUserProfile = async (req, res) => {
         gender: updatedUser.gender,
         address: updatedUser.address,
         emergencyContact: updatedUser.emergencyContact,
+        height: updatedUser.height,
+        weight: updatedUser.weight,
         membership: updatedUser.membership,
         token: generateToken(updatedUser._id),
       });

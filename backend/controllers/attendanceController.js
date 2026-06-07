@@ -13,24 +13,15 @@ const normalizeDate = (dateStr) => {
 // @access  Private
 export const getMyAttendance = async (req, res) => {
   try {
-    const history = await Attendance.find({ user: req.user._id }).sort({ date: -1 });
+    const history = await Attendance.find({ userId: req.user._id }).sort({ date: -1 });
 
     let presentDays = 0;
     let absentDays = 0;
 
     history.forEach(record => {
-      const morningPresent = record.morningStatus === 'present';
-      const eveningPresent = record.eveningStatus === 'present';
-      
-      const morningAbsent = record.morningStatus === 'absent';
-      const eveningAbsent = record.eveningStatus === 'absent';
-
-      // Rules:
-      // Present: Present in at least one session on that day.
-      // Absent: Absent in at least one session AND present in none.
-      if (morningPresent || eveningPresent) {
+      if (record.status === 'Present') {
         presentDays++;
-      } else if (morningAbsent || eveningAbsent) {
+      } else if (record.status === 'Absent') {
         absentDays++;
       }
     });
@@ -38,24 +29,32 @@ export const getMyAttendance = async (req, res) => {
     const totalDays = presentDays + absentDays;
     const percentage = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
 
+    // Map history to match expectations: Date | Session Attended | Status
+    const formattedHistory = history.map(record => ({
+      _id: record._id,
+      date: record.date,
+      session: record.status === 'Present' ? record.session : 'Absent',
+      status: record.status
+    }));
+
     res.json({
       summary: {
         presentDays,
         absentDays,
         attendancePercentage: percentage
       },
-      history
+      history: formattedHistory
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Admin: Mark or update attendance for a member (separately for morning/evening)
+// @desc    Admin: Mark or update attendance for a member (single session per day)
 // @route   POST /api/attendance/mark
 // @access  Private/Admin
 export const markAttendance = async (req, res) => {
-  const { userId, date, morningStatus, eveningStatus } = req.body;
+  const { userId, date, session, status } = req.body; // session = 'Morning' | 'Evening' | null, status = 'Present' | 'Absent'
 
   if (!userId) {
     return res.status(400).json({ message: 'User ID is required' });
@@ -69,19 +68,24 @@ export const markAttendance = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Find existing attendance or create new (ensures no duplicate records per user per date)
-    let attendance = await Attendance.findOne({ user: userId, date: targetDate });
+    // Find existing attendance or create new
+    let attendance = await Attendance.findOne({ userId, date: targetDate });
+
+    // Validate that if status is Present, a valid session is selected
+    const finalSession = status === 'Present' ? session : null;
 
     if (attendance) {
-      if (morningStatus !== undefined) attendance.morningStatus = morningStatus;
-      if (eveningStatus !== undefined) attendance.eveningStatus = eveningStatus;
+      attendance.session = finalSession;
+      attendance.status = status;
+      attendance.markedBy = req.user._id;
       await attendance.save();
     } else {
       attendance = await Attendance.create({
-        user: userId,
+        userId,
         date: targetDate,
-        morningStatus: morningStatus !== undefined ? morningStatus : 'none',
-        eveningStatus: eveningStatus !== undefined ? eveningStatus : 'none'
+        session: finalSession,
+        status,
+        markedBy: req.user._id
       });
     }
 
@@ -110,13 +114,11 @@ export const getAttendanceReport = async (req, res) => {
       endDate = new Date(targetDate);
       query.date = targetDate;
     } else if (type === 'weekly') {
-      // 7 days window leading up to targetDate
       endDate = new Date(targetDate);
       startDate = new Date(targetDate);
       startDate.setDate(startDate.getDate() - 6);
       query.date = { $gte: startDate, $lte: endDate };
     } else if (type === 'monthly') {
-      // Calendar month of targetDate
       startDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
       endDate = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0);
       query.date = { $gte: startDate, $lte: endDate };
@@ -124,12 +126,11 @@ export const getAttendanceReport = async (req, res) => {
       if (!userId) {
         return res.status(400).json({ message: 'User ID is required for member-wise report' });
       }
-      query.user = userId;
+      query.userId = userId;
     } else {
       return res.status(400).json({ message: 'Invalid report type' });
     }
 
-    // Load users
     let users = [];
     if (type === 'member') {
       users = await User.find({ _id: userId }).select('name email mobile membership');
@@ -137,78 +138,50 @@ export const getAttendanceReport = async (req, res) => {
       users = await User.find({ role: 'client' }).select('name email mobile membership');
     }
 
-    // Load attendance records
     const records = await Attendance.find(query).sort({ date: -1 });
 
-    // Format output data
     let reportData = [];
 
     if (type === 'daily') {
-      // Daily report lists all members, showing check-ins or 'none' if empty
       reportData = users.map(user => {
-        const record = records.find(r => r.user.toString() === user._id.toString());
-        const morning = record ? record.morningStatus : 'none';
-        const evening = record ? record.eveningStatus : 'none';
-        
-        let dayStatus = 'Not Marked';
-        if (morning === 'present' || evening === 'present') {
-          dayStatus = 'Present';
-        } else if (morning === 'absent' || evening === 'absent') {
-          dayStatus = 'Absent';
-        }
-
+        const record = records.find(r => r.userId.toString() === user._id.toString());
         return {
           memberName: user.name,
           membershipStatus: user.membership?.status || 'none',
           date: targetDate,
-          morningSession: morning,
-          eveningSession: evening,
-          attendanceStatus: dayStatus,
+          session: record ? record.session : null,
+          attendanceStatus: record ? record.status : 'Absent',
           userId: user._id
         };
       });
     } else {
-      // Weekly, Monthly, and Member-wise reports list all logs in the date range
       reportData = records.map(record => {
-        const user = users.find(u => u._id.toString() === record.user.toString());
+        const user = users.find(u => u._id.toString() === record.userId.toString());
         if (!user) return null;
-
-        const morning = record.morningStatus;
-        const evening = record.eveningStatus;
-        
-        let dayStatus = 'Not Marked';
-        if (morning === 'present' || evening === 'present') {
-          dayStatus = 'Present';
-        } else if (morning === 'absent' || evening === 'absent') {
-          dayStatus = 'Absent';
-        }
 
         return {
           memberName: user.name,
           membershipStatus: user.membership?.status || 'none',
           date: record.date,
-          morningSession: morning,
-          eveningSession: evening,
-          attendanceStatus: dayStatus,
+          session: record.session,
+          attendanceStatus: record.status,
           userId: user._id,
           recordId: record._id
         };
       }).filter(Boolean);
     }
 
-    // Calculate Summary Stats for the period
-    let morningPresent = 0;
-    let eveningPresent = 0;
+    let morningCount = 0;
+    let eveningCount = 0;
     let totalPresent = 0;
     let totalAbsent = 0;
 
     reportData.forEach(item => {
-      if (item.morningSession === 'present') morningPresent++;
-      if (item.eveningSession === 'present') eveningPresent++;
-      
       if (item.attendanceStatus === 'Present') {
         totalPresent++;
-      } else if (item.attendanceStatus === 'Absent') {
+        if (item.session === 'Morning') morningCount++;
+        if (item.session === 'Evening') eveningCount++;
+      } else {
         totalAbsent++;
       }
     });
@@ -218,15 +191,14 @@ export const getAttendanceReport = async (req, res) => {
 
     res.json({
       summary: {
-        morningPresentCount: morningPresent,
-        eveningPresentCount: eveningPresent,
+        morningSessionCount: morningCount,
+        eveningSessionCount: eveningCount,
         totalPresentMembers: totalPresent,
         totalAbsentMembers: totalAbsent,
         overallPercentage: percentage
       },
       report: reportData
     });
-
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -244,15 +216,15 @@ export const getDailyAttendance = async (req, res) => {
 
     // Combine users with their attendance status
     const report = users.map(user => {
-      const record = attendanceRecords.find(rec => rec.user.toString() === user._id.toString());
+      const record = attendanceRecords.find(rec => rec.userId.toString() === user._id.toString());
       return {
         _id: user._id,
         name: user.name,
         email: user.email,
         mobile: user.mobile,
         membershipStatus: user.membership?.status || 'none',
-        morningStatus: record ? record.morningStatus : 'none',
-        eveningStatus: record ? record.eveningStatus : 'none',
+        session: record ? record.session : null,
+        status: record ? record.status : 'Absent',
         recordId: record ? record._id : null
       };
     });

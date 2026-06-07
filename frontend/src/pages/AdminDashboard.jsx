@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Users, CheckCircle, CheckCircle2, AlertTriangle, Calendar, IndianRupee, Search, SlidersHorizontal, Edit3, Trash2, Loader, RefreshCw, Send, Eye, FileText, AlertCircle } from 'lucide-react';
+import { 
+  Shield, Users, CheckCircle, CheckCircle2, AlertTriangle, Calendar, 
+  IndianRupee, Search, SlidersHorizontal, Edit3, Trash2, Loader, 
+  RefreshCw, Send, Eye, FileText, AlertCircle, Plus, CreditCard 
+} from 'lucide-react';
 import axios from '../api/axios.js';
 import { 
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, 
@@ -18,13 +22,16 @@ const AdminDashboard = () => {
       activeMembers: 0,
       expiredMembers: 0,
       todayAttendance: { morningPresent: 0, eveningPresent: 0, totalPresent: 0, totalAbsent: 0 },
-      monthlyRevenue: 0
+      monthlyRevenue: 0,
+      totalRevenue: 0,
+      onlineRevenue: 0,
+      cashRevenue: 0
     },
     charts: { revenueData: [], membershipData: [], attendanceData: [] }
   });
   const [members, setMembers] = useState([]);
   const [payments, setPayments] = useState([]);
-  const [reminders, setReminders] = useState([]);
+  const [pendingReminders, setPendingReminders] = useState([]);
   const [dailyAttendance, setDailyAttendance] = useState([]);
   
   // Controls & Loaders
@@ -39,13 +46,26 @@ const AdminDashboard = () => {
   const [memberPlanFilter, setMemberPlanFilter] = useState('all');
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('all');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState('all');
+  const [reminderSearch, setReminderSearch] = useState('');
+  const [reminderStatusFilter, setReminderStatusFilter] = useState('all'); // 'all', 'soon', 'today', 'expired'
 
   // Edit Member Modal State
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [editForm, setEditForm] = useState({
     name: '', email: '', mobile: '', age: '', gender: 'male', address: '', emergencyContact: '',
+    height: '', weight: '',
     membership: { plan: 'none', status: 'none', startDate: '', endDate: '' }
+  });
+
+  // Manual Add Member Modal State
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [addForm, setAddForm] = useState({
+    name: '', email: '', mobile: '', age: '', gender: 'male', address: '', emergencyContact: '',
+    height: '', weight: '', password: '',
+    membership: { plan: 'none', status: 'none', startDate: '', endDate: '' },
+    payment: { amount: '', paymentMethod: 'Cash Transaction' }
   });
 
   // Recharts colors
@@ -75,7 +95,7 @@ const AdminDashboard = () => {
   const fetchPayments = async () => {
     try {
       const { data } = await axios.get('/admin/payments', {
-        params: { status: paymentStatusFilter }
+        params: { status: paymentStatusFilter, paymentMethod: paymentMethodFilter }
       });
       setPayments(data);
     } catch (err) {
@@ -83,12 +103,14 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchReminders = async () => {
+  const fetchPendingReminders = async () => {
     try {
-      const { data } = await axios.get('/admin/reminders');
-      setReminders(data);
+      const { data } = await axios.get('/admin/reminders/pending', {
+        params: { search: reminderSearch, statusFilter: reminderStatusFilter }
+      });
+      setPendingReminders(data);
     } catch (err) {
-      console.error('Error loading reminder logs:', err);
+      console.error('Error loading pending reminders list:', err);
     }
   };
 
@@ -97,7 +119,6 @@ const AdminDashboard = () => {
       const { data } = await axios.get('/attendance/daily', {
         params: { date: attendanceDate }
       });
-      console.log("data:", data)
       setDailyAttendance(data);
     } catch (err) {
       console.error('Error loading daily attendance sheets:', err);
@@ -112,7 +133,6 @@ const AdminDashboard = () => {
         fetchStats(),
         fetchMembers(),
         fetchPayments(),
-        fetchReminders(),
         fetchDailyAttendance()
       ]);
       setLoading(false);
@@ -139,31 +159,39 @@ const AdminDashboard = () => {
     if (!loading) {
       fetchPayments();
     }
-  }, [paymentStatusFilter]);
+  }, [paymentStatusFilter, paymentMethodFilter]);
 
-  // Handle reminder scan & triggers
-  const triggerRemindersScan = async () => {
+  // Sync reminders tab queries
+  useEffect(() => {
+    if (activeTab === 'reminders') {
+      fetchPendingReminders();
+    }
+  }, [activeTab, reminderSearch, reminderStatusFilter]);
+
+  // Mark manual WhatsApp renewal reminder
+  const sendManualWhatsApp = async (userId) => {
     setActionLoading(true);
     setErrorMsg('');
     setSuccessMsg('');
     try {
-      const { data } = await axios.post('/admin/trigger-reminders');
+      const { data } = await axios.post('/admin/reminders/send', { userId });
       setSuccessMsg(data.message);
-      await Promise.all([fetchReminders(), fetchStats()]);
+      setTimeout(() => setSuccessMsg(''), 4000);
     } catch (err) {
-      setErrorMsg('Failed to trigger scan: ' + (err.response?.data?.message || err.message));
+      setErrorMsg(err.response?.data?.message || 'Failed to dispatch manual alert.');
     } finally {
       setActionLoading(false);
     }
   };
 
-  // Mark specific member attendance
+  // Mark specific member attendance (Session = 'Morning' | 'Evening' | null, Status = 'Present' | 'Absent')
   const updateMemberAttendance = async (userId, session, status) => {
     try {
       const payload = {
         userId,
         date: attendanceDate,
-        [session]: status
+        session,
+        status
       };
       await axios.post('/attendance/mark', payload);
       // Reload daily attendance sheet and card counters
@@ -183,7 +211,7 @@ const AdminDashboard = () => {
     try {
       await axios.delete(`/admin/members/${id}`);
       setSuccessMsg('Member deleted successfully.');
-      await Promise.all([fetchMembers(), fetchStats(), fetchPayments(), fetchReminders(), fetchDailyAttendance()]);
+      await Promise.all([fetchMembers(), fetchStats(), fetchPayments(), fetchDailyAttendance()]);
     } catch (err) {
       setErrorMsg(err.response?.data?.message || 'Error deleting member.');
     } finally {
@@ -202,6 +230,8 @@ const AdminDashboard = () => {
       gender: member.gender || 'male',
       address: member.address || '',
       emergencyContact: member.emergencyContact || '',
+      height: member.height || '',
+      weight: member.weight || '',
       membership: {
         plan: member.membership?.plan || 'none',
         status: member.membership?.status || 'none',
@@ -228,12 +258,34 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleAddSubmit = async (e) => {
+    e.preventDefault();
+    setActionLoading(true);
+    setErrorMsg('');
+    try {
+      await axios.post('/admin/members', addForm);
+      setSuccessMsg('Manual gym member profile created and activated!');
+      setAddModalOpen(false);
+      setAddForm({
+        name: '', email: '', mobile: '', age: '', gender: 'male', address: '', emergencyContact: '',
+        height: '', weight: '', password: '',
+        membership: { plan: 'none', status: 'none', startDate: '', endDate: '' },
+        payment: { amount: '', paymentMethod: 'Cash Transaction' }
+      });
+      await Promise.all([fetchMembers(), fetchStats(), fetchDailyAttendance(), fetchPayments()]);
+    } catch (err) {
+      setErrorMsg(err.response?.data?.message || 'Failed to manually register gym member.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-deep-black flex items-center justify-center">
         <div className="text-center space-y-4">
           <Loader className="h-10 w-10 text-gold animate-spin mx-auto" />
-          <p className="text-gray-400 text-sm">Loading {gym_first_name} Control Center...</p>
+          <p className="text-gray-400 text-sm">Loading Olympus Control Center...</p>
         </div>
       </div>
     );
@@ -270,7 +322,8 @@ const AdminDashboard = () => {
             disabled={actionLoading}
             onClick={async () => {
               setLoading(true);
-              await Promise.all([fetchStats(), fetchMembers(), fetchPayments(), fetchReminders(), fetchDailyAttendance()]);
+              await Promise.all([fetchStats(), fetchMembers(), fetchPayments(), fetchDailyAttendance()]);
+              if (activeTab === 'reminders') await fetchPendingReminders();
               setLoading(false);
             }}
             className="flex items-center space-x-2 border border-gold/20 hover:bg-gold/10 text-gold text-xs tracking-widest font-bold px-5 py-3 rounded-full transition-colors cursor-pointer"
@@ -287,7 +340,7 @@ const AdminDashboard = () => {
             { id: 'members', label: 'MEMBER DIRECTORY' },
             { id: 'attendance', label: 'ATTENDANCE BOARD' },
             { id: 'payments', label: 'INVOICES & REVENUE' },
-            { id: 'reminders', label: 'WHATSAPP REMINDERS' }
+            { id: 'reminders', label: 'RENEWAL REMINDERS' }
           ].map(tab => (
             <button
               key={tab.id}
@@ -304,11 +357,11 @@ const AdminDashboard = () => {
         </div>
 
         {/* TAB CONTENTS */}
-        {/* T1: Overview Section */}
+        {/* T1: Overview Section (Calculations adjusted for cash/online revenue & daily attendance stats) */}
         {activeTab === 'overview' && (
           <div className="space-y-10">
             {/* Cards Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               
               {/* Total Members */}
               <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
@@ -337,10 +390,32 @@ const AdminDashboard = () => {
                 <div className="bg-red-500/10 p-3 rounded-lg text-red-400"><AlertTriangle className="h-5 w-5" /></div>
               </div>
 
-              {/* Morning Present */}
+              {/* Today's Present Count */}
               <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
                 <div>
-                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Morning Present</span>
+                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Today Present</span>
+                  <span className="text-3xl font-extrabold text-emerald-400 mt-1 block">{stats.cards.todayAttendance.totalPresent}</span>
+                </div>
+                <div className="bg-emerald-500/10 p-3 rounded-lg text-emerald-400">
+                  <CheckCircle2 className="h-5 w-5" />
+                </div>
+              </div>
+
+              {/* Today's Absent Count */}
+              <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
+                <div>
+                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Today Absent</span>
+                  <span className="text-3xl font-extrabold text-red-400 mt-1 block">{stats.cards.todayAttendance.totalAbsent}</span>
+                </div>
+                <div className="bg-red-500/10 p-3 rounded-lg text-red-400">
+                  <AlertCircle className="h-5 w-5" />
+                </div>
+              </div>
+
+              {/* Morning Session Count */}
+              <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
+                <div>
+                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Morning Session</span>
                   <span className="text-3xl font-extrabold text-gold mt-1 block">{stats.cards.todayAttendance.morningPresent}</span>
                 </div>
                 <div className="bg-gold/10 p-3 rounded-lg text-gold">
@@ -348,33 +423,11 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Evening Present Card */}
+              {/* Evening Session Count */}
               <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
                 <div>
-                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Evening Present</span>
+                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Evening Session</span>
                   <span className="text-3xl font-extrabold text-gold mt-1 block">{stats.cards.todayAttendance.eveningPresent}</span>
-                </div>
-                <div className="bg-gold/10 p-3 rounded-lg text-gold">
-                  <Calendar className="h-5 w-5" />
-                </div>
-              </div>
-
-              {/* Total Present Card */}
-              <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
-                <div>
-                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Total Present</span>
-                  <span className="text-3xl font-extrabold text-gold mt-1 block">{stats.cards.todayAttendance.totalPresent}</span>
-                </div>
-                <div className="bg-gold/10 p-3 rounded-lg text-gold">
-                  <Calendar className="h-5 w-5" />
-                </div>
-              </div>
-
-              {/* Total Absent Card */}
-              <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
-                <div>
-                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Total Absent</span>
-                  <span className="text-3xl font-extrabold text-gold mt-1 block">{stats.cards.todayAttendance.totalAbsent}</span>
                 </div>
                 <div className="bg-gold/10 p-3 rounded-lg text-gold">
                   <Calendar className="h-5 w-5" />
@@ -390,12 +443,36 @@ const AdminDashboard = () => {
                 <div className="bg-white/10 p-3 rounded-lg text-white"><IndianRupee className="h-5 w-5" /></div>
               </div>
 
+              {/* Total Revenue */}
+              <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
+                <div>
+                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Total Revenue</span>
+                  <span className="text-2xl font-extrabold text-white mt-1.5 block">₹{stats.cards.totalRevenue.toLocaleString()}</span>
+                </div>
+                <div className="bg-white/10 p-3 rounded-lg text-white"><IndianRupee className="h-5 w-5" /></div>
+              </div>
+
+              {/* Online Revenue */}
+              <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
+                <div>
+                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Online Revenue</span>
+                  <span className="text-2xl font-extrabold text-emerald-400 mt-1.5 block">₹{stats.cards.onlineRevenue.toLocaleString()}</span>
+                </div>
+                <div className="bg-emerald-500/10 p-3 rounded-lg text-emerald-400"><CreditCard className="h-5 w-5" /></div>
+              </div>
+
+              {/* Cash Revenue */}
+              <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
+                <div>
+                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Cash Revenue</span>
+                  <span className="text-2xl font-extrabold text-gold mt-1.5 block">₹{stats.cards.cashRevenue.toLocaleString()}</span>
+                </div>
+                <div className="bg-gold/10 p-3 rounded-lg text-gold"><IndianRupee className="h-5 w-5" /></div>
+              </div>
+
             </div>
 
-
-
-
-{/* Recharts Analytics Grid */}
+            {/* Recharts Analytics Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               
               {/* Revenue Area Chart */}
@@ -484,7 +561,7 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* T2: Member Directory Section */}
+        {/* T2: Member Directory Section (Display manual creation triggers and height/weight attributes) */}
         {activeTab === 'members' && (
           <div className="glass-premium rounded-2xl border border-gold/15 p-6 space-y-6">
             
@@ -503,7 +580,7 @@ const AdminDashboard = () => {
               </div>
 
               {/* Select Status */}
-              <div className="flex space-x-3">
+              <div className="flex gap-3 items-center flex-wrap">
                 <select
                   value={memberStatusFilter}
                   onChange={(e) => setMemberStatusFilter(e.target.value)}
@@ -525,6 +602,13 @@ const AdminDashboard = () => {
                   <option value="premium">Premium Plan</option>
                   <option value="none">No Subscription</option>
                 </select>
+                <button
+                  onClick={() => setAddModalOpen(true)}
+                  className="bg-gold hover:bg-gold-hover text-deep-black font-extrabold text-xs tracking-wider px-5 py-3.5 rounded-xl flex items-center space-x-2 cursor-pointer uppercase shadow-md shadow-gold/15"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add New Member</span>
+                </button>
               </div>
             </div>
 
@@ -535,6 +619,7 @@ const AdminDashboard = () => {
                   <tr className="border-b border-white/10 text-xs text-gray-400 font-bold uppercase tracking-wider">
                     <th className="py-4">Member Info</th>
                     <th className="py-4">Mobile & Age</th>
+                    <th className="py-4 text-center">Body Metrics</th>
                     <th className="py-4">Subscription Plan</th>
                     <th className="py-4">Validity Range</th>
                     <th className="py-4 text-center">Membership Status</th>
@@ -544,7 +629,7 @@ const AdminDashboard = () => {
                 <tbody className="divide-y divide-white/5 text-sm text-gray-300">
                   {members.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="py-8 text-center text-gray-500 text-xs">
+                      <td colSpan="7" className="py-8 text-center text-gray-500 text-xs">
                         No members matching current search criteria.
                       </td>
                     </tr>
@@ -559,6 +644,16 @@ const AdminDashboard = () => {
                           <div>+91 {member.mobile}</div>
                           <div className="text-xs text-gray-400 capitalize">{member.gender}, {member.age} yrs</div>
                         </td>
+                        <td className="py-4 pr-4 text-center text-xs">
+                          {member.height || member.weight ? (
+                            <div className="space-y-0.5">
+                              {member.height && <div>H: <strong className="text-white font-bold">{member.height} cm</strong></div>}
+                              {member.weight && <div>W: <strong className="text-white font-bold">{member.weight} kg</strong></div>}
+                            </div>
+                          ) : (
+                            <span className="text-gray-500">Not recorded</span>
+                          )}
+                        </td>
                         <td className="py-4 pr-4 font-semibold capitalize">
                           {member.membership?.plan === 'none' ? 'None' : `${member.membership?.plan} Plan`}
                         </td>
@@ -566,7 +661,7 @@ const AdminDashboard = () => {
                           {member.membership?.startDate ? (
                             <>
                               <span>{new Date(member.membership.startDate).toLocaleDateString()}</span>
-                              <span className="mx-1 text-gold">to</span>
+                              <span className="mx-1 text-gold text-[10px]">to</span>
                               <span>{new Date(member.membership.endDate).toLocaleDateString()}</span>
                             </>
                           ) : (
@@ -612,15 +707,15 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* T3: Session Attendance Grid Section */}
+        {/* T3: Session Attendance Grid Section (Morning Present, Evening Present, Absent toggling rules) */}
         {activeTab === 'attendance' && (
           <div className="glass-premium rounded-2xl border border-gold/15 p-6 space-y-6">
             
             {/* Header controls */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <h3 className="text-lg font-bold text-white">Session Check-in Sheets</h3>
-                <p className="text-xs text-gray-400">Select a date to log morning and evening session attendance status.</p>
+                <h3 className="text-lg font-bold text-white">Daily Session Check-in sheets</h3>
+                <p className="text-xs text-gray-400">Select a date to check in members. Only ONE present session per member per day is allowed.</p>
               </div>
               <div>
                 <input
@@ -638,22 +733,19 @@ const AdminDashboard = () => {
                 <thead>
                   <tr className="border-b border-white/10 text-xs text-gray-400 font-bold uppercase tracking-wider">
                     <th className="py-4">Member Details</th>
-                    <th className="py-4 text-center">Morning Session Check-in</th>
-                    <th className="py-4 text-center">Evening Session Check-in</th>
-                    <th className="py-4 text-center">Combined Summary</th>
+                    <th className="py-4 text-center">Mark Daily Check-in Status</th>
+                    <th className="py-4 text-center">Final Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5 text-sm text-gray-300">
                   {dailyAttendance.length === 0 ? (
                     <tr>
-                      <td colSpan="4" className="py-8 text-center text-gray-500 text-xs">
+                      <td colSpan="3" className="py-8 text-center text-gray-500 text-xs">
                         No clients registered in the database to mark attendance.
                       </td>
                     </tr>
                   ) : (
                     dailyAttendance.map((rec) => {
-                      const dayStatus = (rec.morningStatus === 'present' || rec.eveningStatus === 'present') ? 'Present' : (rec.morningStatus === 'absent' && rec.eveningStatus === 'absent') ? 'Absent' : 'None';
-
                       return (
                         <tr key={rec._id} className="hover:bg-white/5 transition-colors">
                           <td className="py-4">
@@ -661,46 +753,43 @@ const AdminDashboard = () => {
                             <div className="text-xs text-gray-400">{rec.mobile}</div>
                           </td>
                           <td className="py-4">
-                            <div className="flex justify-center space-x-2">
+                            <div className="flex justify-center space-x-3">
+                              {/* Morning Session Button */}
                               <button
-                                onClick={() => updateMemberAttendance(rec._id, 'morningStatus', 'present')}
-                                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                                  rec.morningStatus === 'present'
-                                    ? 'bg-emerald-500 text-deep-black'
-                                    : 'border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10'
+                                disabled={rec.status === 'Present' && rec.session === 'Evening'}
+                                onClick={() => updateMemberAttendance(rec._id, 'Morning', 'Present')}
+                                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                                  rec.status === 'Present' && rec.session === 'Morning'
+                                    ? 'bg-emerald-500 text-deep-black font-extrabold'
+                                    : rec.status === 'Present' && rec.session === 'Evening'
+                                      ? 'border border-white/5 text-gray-600 cursor-not-allowed font-light'
+                                      : 'border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 cursor-pointer'
                                 }`}
                               >
-                                PRESENT
+                                MORNING PRESENT
                               </button>
+
+                              {/* Evening Session Button */}
                               <button
-                                onClick={() => updateMemberAttendance(rec._id, 'morningStatus', 'absent')}
-                                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                                  rec.morningStatus === 'absent'
-                                    ? 'bg-red-500 text-white'
-                                    : 'border border-red-500/20 text-red-400 hover:bg-red-500/10'
+                                disabled={rec.status === 'Present' && rec.session === 'Morning'}
+                                onClick={() => updateMemberAttendance(rec._id, 'Evening', 'Present')}
+                                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                                  rec.status === 'Present' && rec.session === 'Evening'
+                                    ? 'bg-emerald-500 text-deep-black font-extrabold'
+                                    : rec.status === 'Present' && rec.session === 'Morning'
+                                      ? 'border border-white/5 text-gray-600 cursor-not-allowed font-light'
+                                      : 'border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 cursor-pointer'
                                 }`}
                               >
-                                ABSENT
+                                EVENING PRESENT
                               </button>
-                            </div>
-                          </td>
-                          <td className="py-4">
-                            <div className="flex justify-center space-x-2">
+
+                              {/* Absent Button */}
                               <button
-                                onClick={() => updateMemberAttendance(rec._id, 'eveningStatus', 'present')}
+                                onClick={() => updateMemberAttendance(rec._id, null, 'Absent')}
                                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                                  rec.eveningStatus === 'present'
-                                    ? 'bg-emerald-500 text-deep-black'
-                                    : 'border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10'
-                                }`}
-                              >
-                                PRESENT
-                              </button>
-                              <button
-                                onClick={() => updateMemberAttendance(rec._id, 'eveningStatus', 'absent')}
-                                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                                  rec.eveningStatus === 'absent'
-                                    ? 'bg-red-500 text-white'
+                                  rec.status === 'Absent'
+                                    ? 'bg-red-500 text-white font-extrabold animate-pulse'
                                     : 'border border-red-500/20 text-red-400 hover:bg-red-500/10'
                                 }`}
                               >
@@ -710,13 +799,11 @@ const AdminDashboard = () => {
                           </td>
                           <td className="py-4 text-center">
                             <span className={`inline-block text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase ${
-                              dayStatus === 'Present' 
+                              rec.status === 'Present' 
                                 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' 
-                                : dayStatus === 'Absent' 
-                                  ? 'bg-red-500/15 text-red-400 border border-red-500/20' 
-                                  : 'bg-gray-500/15 text-gray-400 border border-white/5'
+                                : 'bg-red-500/15 text-red-400 border border-red-500/20'
                             }`}>
-                              {dayStatus}
+                              {rec.status === 'Present' ? `Present (${rec.session})` : 'Absent'}
                             </span>
                           </td>
                         </tr>
@@ -729,26 +816,37 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* T4: Invoices & Payments Section */}
+        {/* T4: Invoices & Payments Section (Supports Cash vs Online paymentMethod tracking & filtering) */}
         {activeTab === 'payments' && (
           <div className="glass-premium rounded-2xl border border-gold/15 p-6 space-y-6">
             
             {/* Filter controls */}
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center gap-4 flex-wrap">
               <div>
                 <h3 className="text-lg font-bold text-white">Payment Ledgers</h3>
                 <p className="text-xs text-gray-400 mt-1">Audit log of payments initiated and finalized.</p>
               </div>
-              <select
-                value={paymentStatusFilter}
-                onChange={(e) => setPaymentStatusFilter(e.target.value)}
-                className="px-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
-              >
-                <option value="all">All Invoices</option>
-                <option value="paid">Paid Invoices</option>
-                <option value="pending">Pending Invoices</option>
-                <option value="failed">Failed Invoices</option>
-              </select>
+              <div className="flex space-x-3">
+                <select
+                  value={paymentStatusFilter}
+                  onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                  className="px-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="paid">Paid Invoices</option>
+                  <option value="pending">Pending Invoices</option>
+                  <option value="failed">Failed Invoices</option>
+                </select>
+                <select
+                  value={paymentMethodFilter}
+                  onChange={(e) => setPaymentMethodFilter(e.target.value)}
+                  className="px-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                >
+                  <option value="all">All Methods</option>
+                  <option value="Online Transaction">Online Transaction</option>
+                  <option value="Cash Transaction">Cash Transaction</option>
+                </select>
+              </div>
             </div>
 
             {/* Invoices List Table */}
@@ -758,8 +856,9 @@ const AdminDashboard = () => {
                   <tr className="border-b border-white/10 text-xs text-gray-400 font-bold uppercase tracking-wider">
                     <th className="py-4">Invoice date</th>
                     <th className="py-4">Client info</th>
-                    <th className="py-4">Razorpay Order ID</th>
-                    <th className="py-4">Razorpay Payment ID</th>
+                    <th className="py-4">Membership Plan</th>
+                    <th className="py-4">Payment Method</th>
+                    <th className="py-4">Txn Details</th>
                     <th className="py-4">Amount</th>
                     <th className="py-4 text-center">Status</th>
                   </tr>
@@ -767,7 +866,7 @@ const AdminDashboard = () => {
                 <tbody className="divide-y divide-white/5 text-sm text-gray-300">
                   {payments.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="py-8 text-center text-gray-500 text-xs">
+                      <td colSpan="7" className="py-8 text-center text-gray-500 text-xs">
                         No transaction invoices found.
                       </td>
                     </tr>
@@ -787,9 +886,11 @@ const AdminDashboard = () => {
                             <span className="text-gray-500 font-light italic">Deleted User</span>
                           )}
                         </td>
-                        <td className="py-4 font-mono text-xs">{p.razorpayOrderId}</td>
+                        <td className="py-4 font-semibold text-white capitalize">{p.membershipPlan || 'Starter'}</td>
+                        <td className="py-4 text-xs font-bold text-gold uppercase">{p.paymentMethod || 'Online Transaction'}</td>
                         <td className="py-4 font-mono text-xs">
-                          {p.razorpayPaymentId || <span className="text-gray-500 italic">Not generated</span>}
+                          <div>Order: {p.razorpayOrderId}</div>
+                          {p.razorpayPaymentId && <div className="text-[10px] text-gray-500 mt-0.5">PayID: {p.razorpayPaymentId}</div>}
                         </td>
                         <td className="py-4 font-extrabold text-white">₹{p.amount.toLocaleString()}</td>
                         <td className="py-4 text-center">
@@ -812,78 +913,102 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* T5: WhatsApp Reminder Logs Section */}
+        {/* T5: WhatsApp Renewal Reminders Board (Simplified Expiring Soon/Today/Expired Manual Scans) */}
         {activeTab === 'reminders' && (
-          <div className="space-y-8">
+          <div className="space-y-6">
             
-            {/* Quick scanning controls */}
-            <div className="glass-premium rounded-2xl border border-gold/15 p-6 flex flex-col md:flex-row justify-between items-center gap-6">
-              <div className="space-y-1">
-                <h3 className="text-lg font-bold text-white flex items-center space-x-2">
-                  <Send className="h-5 w-5 text-gold shrink-0" />
-                  <span>WhatsApp Notifications Control</span>
-                </h3>
-                <p className="text-xs text-gray-400">
-                  Scan all client records and automatically trigger WhatsApp alerts for memberships expiring in 7 days, today, or already expired.
-                </p>
+            {/* Quick Filter controls */}
+            <div className="glass-premium rounded-2xl border border-gold/15 p-6 flex flex-col md:flex-row gap-4 justify-between items-stretch">
+              <div className="relative flex-1">
+                <Search className="absolute inset-y-0 left-0 pl-3.5 h-full w-5 text-gray-500 pointer-events-none" />
+                <input
+                  type="text"
+                  value={reminderSearch}
+                  onChange={(e) => setReminderSearch(e.target.value)}
+                  placeholder="Search members by name or mobile..."
+                  className="block w-full pl-11 pr-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-gold transition-colors"
+                />
               </div>
-              <button
-                disabled={actionLoading}
-                onClick={triggerRemindersScan}
-                className="bg-gradient-to-r from-premium-yellow to-gold text-deep-black font-extrabold text-xs tracking-wider px-6 py-4 rounded-full shadow-lg shadow-gold/25 hover:scale-105 transition-transform flex items-center space-x-2 cursor-pointer shrink-0"
+              <select
+                value={reminderStatusFilter}
+                onChange={(e) => setReminderStatusFilter(e.target.value)}
+                className="px-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
               >
-                {actionLoading ? (
-                  <>
-                    <Loader className="h-4 w-4 animate-spin text-deep-black" />
-                    <span>SCANNING DIRECTORY...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>RUN MANUAL EXPIRY SCAN</span>
-                  </>
-                )}
-              </button>
+                <option value="all">All Reminders (Expiring/Expired)</option>
+                <option value="soon">Expiring Soon (Within 7 Days)</option>
+                <option value="today">Expiring Today</option>
+                <option value="expired">Expired Memberships</option>
+              </select>
             </div>
 
-            {/* Sending Logs List */}
+            {/* List Table */}
             <div className="glass-premium rounded-2xl border border-gold/15 p-6 space-y-6">
               <div>
-                <h3 className="text-lg font-bold text-white">Sent Notifications History</h3>
-                <p className="text-xs text-gray-400 mt-1">Audit trail of WhatsApp notifications dispatched via webhook api templates.</p>
+                <h3 className="text-lg font-bold text-white">Manual WhatsApp Expiry Reminders</h3>
+                <p className="text-xs text-gray-400 mt-1">Sends manual WhatsApp notifications directly to clients. No reminder logs or history is stored.</p>
               </div>
 
-              <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-                {reminders.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500 text-xs">
-                    No notifications sent yet.
-                  </div>
-                ) : (
-                  reminders.map((log) => (
-                    <div key={log._id} className="bg-black/40 border border-white/5 p-4 rounded-xl space-y-3">
-                      <div className="flex justify-between items-center text-xs">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-bold text-gold">{log.user?.name}</span>
-                          <span className="text-gray-500">|</span>
-                          <span className="text-gray-400">+91 {log.user?.mobile}</span>
-                        </div>
-                        <div className="text-gray-500 text-[11px]">
-                          {new Date(log.sentAt).toLocaleString()}
-                        </div>
-                      </div>
-
-                      <div className="text-xs font-mono text-gray-300 bg-black/60 p-3 rounded-lg whitespace-pre-wrap leading-relaxed border border-white/5">
-                        {log.messageContent}
-                      </div>
-
-                      <div className="flex justify-between items-center text-[10px]">
-                        <span className="text-gray-500 uppercase">Trigger Event: <strong className="text-gray-300 font-semibold">{log.type}</strong></span>
-                        <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-bold uppercase">
-                          {log.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                )}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/10 text-xs text-gray-400 font-bold uppercase tracking-wider">
+                      <th className="py-4">Member Name</th>
+                      <th className="py-4">Mobile Number</th>
+                      <th className="py-4">Membership Plan</th>
+                      <th className="py-4">Last Payment Date</th>
+                      <th className="py-4">Expiry Date</th>
+                      <th className="py-4 text-center">Days Remaining</th>
+                      <th className="py-4 text-center">Status</th>
+                      <th className="py-4 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 text-sm text-gray-300">
+                    {pendingReminders.length === 0 ? (
+                      <tr>
+                        <td colSpan="8" className="py-8 text-center text-gray-500 text-xs">
+                          No pending renewal reminders found.
+                        </td>
+                      </tr>
+                    ) : (
+                      pendingReminders.map((client) => (
+                        <tr key={client._id} className="hover:bg-white/5 transition-colors">
+                          <td className="py-4 font-bold text-white">{client.name}</td>
+                          <td className="py-4 font-semibold text-gray-300">+91 {client.mobile}</td>
+                          <td className="py-4 capitalize font-semibold text-gold">{client.plan} Plan</td>
+                          <td className="py-4 text-xs text-gray-400">
+                            {client.lastPaymentDate ? new Date(client.lastPaymentDate).toLocaleDateString() : 'N/A'}
+                          </td>
+                          <td className="py-4 text-xs font-semibold text-white">
+                            {new Date(client.expiryDate).toLocaleDateString()}
+                          </td>
+                          <td className="py-4 text-center font-mono font-bold text-sm">
+                            {client.daysRemaining}
+                          </td>
+                          <td className="py-4 text-center">
+                            <span className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${
+                              client.statusKey === 'today'
+                                ? 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse'
+                                : client.statusKey === 'soon'
+                                  ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                                  : 'bg-gray-500/20 text-gray-400 border border-white/5'
+                            }`}>
+                              {client.membershipStatus}
+                            </span>
+                          </td>
+                          <td className="py-4 text-center">
+                            <button
+                              disabled={actionLoading}
+                              onClick={() => sendManualWhatsApp(client._id)}
+                              className="px-4 py-2 bg-gradient-to-r from-premium-yellow to-gold text-deep-black font-extrabold text-[10px] tracking-wider rounded-xl hover:scale-105 active:scale-95 transition-all cursor-pointer uppercase shadow-md shadow-gold/15"
+                            >
+                              Send WhatsApp Reminder
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
 
@@ -936,7 +1061,7 @@ const AdminDashboard = () => {
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Mobile Number</label>
                   <input
-                    type="tel"
+                    type="text"
                     required
                     value={editForm.mobile}
                     onChange={(e) => setEditForm({ ...editForm, mobile: e.target.value })}
@@ -968,11 +1093,31 @@ const AdminDashboard = () => {
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Emergency Contact</label>
                   <input
-                    type="tel"
+                    type="text"
                     required
                     value={editForm.emergencyContact}
                     onChange={(e) => setEditForm({ ...editForm, emergencyContact: e.target.value })}
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Height (cm)</label>
+                  <input
+                    type="number"
+                    value={editForm.height || ''}
+                    onChange={(e) => setEditForm({ ...editForm, height: e.target.value })}
+                    className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                    placeholder="Height (cm)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Weight (kg)</label>
+                  <input
+                    type="number"
+                    value={editForm.weight || ''}
+                    onChange={(e) => setEditForm({ ...editForm, weight: e.target.value })}
+                    className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                    placeholder="Weight (kg)"
                   />
                 </div>
               </div>
@@ -1065,6 +1210,261 @@ const AdminDashboard = () => {
                 <button
                   type="button"
                   onClick={() => setEditModalOpen(false)}
+                  className="px-6 py-3.5 border border-gold/20 text-gold font-bold text-xs tracking-wider rounded-xl hover:bg-gold/10 transition-colors"
+                >
+                  CANCEL
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADD NEW MEMBER OVERLAY MODAL */}
+      {addModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm overflow-y-auto">
+          <div className="glass-premium border-gold/30 rounded-3xl max-w-2xl w-full p-8 space-y-6 my-8 animate-fade-in-up">
+            <div className="flex justify-between items-center border-b border-gold/10 pb-4">
+              <h3 className="text-xl font-bold text-white flex items-center space-x-2">
+                <Users className="h-5 w-5 text-gold" />
+                <span>Create Gym Member Profile</span>
+              </h3>
+              <button 
+                onClick={() => setAddModalOpen(false)}
+                className="text-gray-400 hover:text-white font-bold text-sm p-1.5"
+              >
+                CLOSE
+              </button>
+            </div>
+
+            <form onSubmit={handleAddSubmit} className="space-y-6">
+              
+              {/* Profile fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Member Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={addForm.name}
+                    onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                    className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                    placeholder="Full Name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Email Address *</label>
+                  <input
+                    type="email"
+                    required
+                    value={addForm.email}
+                    onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                    className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                    placeholder="email@example.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Mobile Number *</label>
+                  <input
+                    type="text"
+                    required
+                    value={addForm.mobile}
+                    onChange={(e) => setAddForm({ ...addForm, mobile: e.target.value })}
+                    className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                    placeholder="Mobile"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Password *</label>
+                  <input
+                    type="password"
+                    required
+                    value={addForm.password}
+                    onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
+                    className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                    placeholder="Password (min 6 chars)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Age *</label>
+                  <input
+                    type="number"
+                    required
+                    value={addForm.age}
+                    onChange={(e) => setAddForm({ ...addForm, age: e.target.value })}
+                    className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none"
+                    placeholder="Age"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Gender *</label>
+                  <select
+                    value={addForm.gender}
+                    onChange={(e) => setAddForm({ ...addForm, gender: e.target.value })}
+                    className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none"
+                  >
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Height (cm)</label>
+                  <input
+                    type="number"
+                    value={addForm.height}
+                    onChange={(e) => setAddForm({ ...addForm, height: e.target.value })}
+                    className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none"
+                    placeholder="Height (cm)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Weight (kg)</label>
+                  <input
+                    type="number"
+                    value={addForm.weight}
+                    onChange={(e) => setAddForm({ ...addForm, weight: e.target.value })}
+                    className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none"
+                    placeholder="Weight (kg)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Emergency Contact *</label>
+                  <input
+                    type="text"
+                    required
+                    value={addForm.emergencyContact}
+                    onChange={(e) => setAddForm({ ...addForm, emergencyContact: e.target.value })}
+                    className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none"
+                    placeholder="Emergency Contact"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Address</label>
+                  <input
+                    type="text"
+                    value={addForm.address}
+                    onChange={(e) => setAddForm({ ...addForm, address: e.target.value })}
+                    className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none font-sans"
+                    placeholder="Address"
+                  />
+                </div>
+              </div>
+
+              {/* Membership details */}
+              <div className="border-t border-gold/10 pt-5 space-y-4">
+                <span className="block text-xs font-bold text-gold uppercase tracking-wider">Membership Settings</span>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Membership Plan *</label>
+                    <select
+                      value={addForm.membership.plan}
+                      onChange={(e) => setAddForm({
+                        ...addForm,
+                        membership: { ...addForm.membership, plan: e.target.value }
+                      })}
+                      className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                    >
+                      <option value="none">None</option>
+                      <option value="starter">Starter Plan (1M)</option>
+                      <option value="standard">Standard Plan (3M)</option>
+                      <option value="premium">Premium Plan (6M)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Membership Status *</label>
+                    <select
+                      value={addForm.membership.status}
+                      onChange={(e) => setAddForm({
+                        ...addForm,
+                        membership: { ...addForm.membership, status: e.target.value }
+                      })}
+                      className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                    >
+                      <option value="none">None</option>
+                      <option value="active">Active</option>
+                      <option value="expired">Expired</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Start Date</label>
+                    <input
+                      type="date"
+                      value={addForm.membership.startDate}
+                      onChange={(e) => setAddForm({
+                        ...addForm,
+                        membership: { ...addForm.membership, startDate: e.target.value }
+                      })}
+                      className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">End Date</label>
+                    <input
+                      type="date"
+                      value={addForm.membership.endDate}
+                      onChange={(e) => setAddForm({
+                        ...addForm,
+                        membership: { ...addForm.membership, endDate: e.target.value }
+                      })}
+                      className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Details */}
+              <div className="border-t border-gold/10 pt-5 space-y-4">
+                <span className="block text-xs font-bold text-gold uppercase tracking-wider">Initial Payment Logs</span>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Amount Paid (₹)</label>
+                    <input
+                      type="number"
+                      value={addForm.payment.amount}
+                      onChange={(e) => setAddForm({
+                        ...addForm,
+                        payment: { ...addForm.payment, amount: e.target.value }
+                      })}
+                      className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                      placeholder="e.g. 1500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Payment Method</label>
+                    <select
+                      value={addForm.payment.paymentMethod}
+                      onChange={(e) => setAddForm({
+                        ...addForm,
+                        payment: { ...addForm.payment, paymentMethod: e.target.value }
+                      })}
+                      className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                    >
+                      <option value="Cash Transaction">Cash Transaction</option>
+                      <option value="Online Transaction">Online Transaction</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit Buttons */}
+              <div className="flex space-x-4 pt-4 border-t border-white/5">
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="flex-1 py-3.5 bg-gradient-to-r from-premium-yellow to-gold text-deep-black font-bold text-xs tracking-wider rounded-xl hover:scale-[1.01] transition-transform cursor-pointer"
+                >
+                  {actionLoading ? 'CREATING CLIENT...' : 'CREATE NEW MEMBER'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAddModalOpen(false)}
                   className="px-6 py-3.5 border border-gold/20 text-gold font-bold text-xs tracking-wider rounded-xl hover:bg-gold/10 transition-colors"
                 >
                   CANCEL

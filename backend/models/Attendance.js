@@ -2,16 +2,17 @@ import mongoose from 'mongoose';
 
 const attendanceSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     date: { type: Date, required: true }, // Store normalized date (start of day)
-    morningStatus: { type: String, enum: ['present', 'absent', 'none'], default: 'none' },
-    eveningStatus: { type: String, enum: ['present', 'absent', 'none'], default: 'none' }
+    session: { type: String, enum: ['Morning', 'Evening', null], default: null },
+    status: { type: String, enum: ['Present', 'Absent'], required: true, default: 'Absent' },
+    markedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
   },
   { timestamps: true }
 );
 
 // Ensure a user can only have one attendance record per day
-attendanceSchema.index({ user: 1, date: 1 }, { unique: true });
+attendanceSchema.index({ userId: 1, date: 1 }, { unique: true });
 
 const Attendance = mongoose.model('Attendance', attendanceSchema);
 export default Attendance;

@@ -33,16 +33,16 @@ export const sendWhatsAppMessage = async ({ user, type, templateData }) => {
   console.log('====================================================');
 
   try {
-    // Save record to database
-    const notification = await Notification.create({
-      user: user._id,
-      type,
-      status: 'sent',
-      messageContent: message,
-      sentAt: new Date()
-    });
+    // Database logs disabled: "No reminder history should be stored. No WhatsApp logs should be stored."
+    // const notification = await Notification.create({
+    //   user: user._id,
+    //   type,
+    //   status: 'sent',
+    //   messageContent: message,
+    //   sentAt: new Date()
+    // });
 
-    return { success: true, notification };
+    return { success: true, notification: { user: user._id, type, status: 'sent', messageContent: message, sentAt: new Date() } };
   } catch (error) {
     console.error('Error logging notification to DB:', error.message);
     return { success: false, error: error.message };

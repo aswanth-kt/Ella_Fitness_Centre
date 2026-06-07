@@ -12,6 +12,8 @@ const userSchema = new mongoose.Schema(
     gender: { type: String, enum: ['male', 'female', 'other'] },
     address: { type: String },
     emergencyContact: { type: String },
+    height: { type: Number },
+    weight: { type: Number },
     membership: {
       plan: { type: String, enum: ['starter', 'standard', 'premium', 'none'], default: 'none' },
       startDate: { type: Date },

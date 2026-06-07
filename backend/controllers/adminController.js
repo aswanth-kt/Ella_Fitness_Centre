@@ -21,24 +21,26 @@ export const getDashboardStats = async (req, res) => {
     const activeMembers = await User.countDocuments({ role: 'client', 'membership.status': 'active' });
     const expiredMembers = await User.countDocuments({ role: 'client', 'membership.status': 'expired' });
 
-    // Today's attendance details
+    // Today's attendance details (Single daily check-in model)
     const today = getStartOfDay(new Date());
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     const todayMorningPresent = await Attendance.countDocuments({
       date: { $gte: today, $lt: tomorrow },
-      morningStatus: 'present'
+      session: 'Morning',
+      status: 'Present'
     });
 
     const todayEveningPresent = await Attendance.countDocuments({
       date: { $gte: today, $lt: tomorrow },
-      eveningStatus: 'present'
+      session: 'Evening',
+      status: 'Present'
     });
 
     const todayTotalPresent = await Attendance.countDocuments({
       date: { $gte: today, $lt: tomorrow },
-      $or: [{ morningStatus: 'present' }, { eveningStatus: 'present' }]
+      status: 'Present'
     });
 
     const todayTotalAbsent = Math.max(0, totalMembers - todayTotalPresent);
@@ -46,7 +48,7 @@ export const getDashboardStats = async (req, res) => {
     // Monthly revenue (current month)
     const firstDayOfMonth = new Date();
     firstDayOfMonth.setDate(1);
-    firstDayOfMonth.setHours(0,0,0,0);
+    firstDayOfMonth.setHours(0, 0, 0, 0);
 
     const paymentsThisMonth = await Payment.find({
       status: 'paid',
@@ -54,13 +56,23 @@ export const getDashboardStats = async (req, res) => {
     });
     const monthlyRevenue = paymentsThisMonth.reduce((sum, p) => sum + p.amount, 0);
 
+    // Online & Cash Revenue splits (All-time or monthly? Let's provide both all-time and current-month if needed. Let's do all-time for total revenue card, and splits for total all-time revenue).
+    const allPaidPayments = await Payment.find({ status: 'paid' });
+    const totalRevenue = allPaidPayments.reduce((sum, p) => sum + p.amount, 0);
+    const onlineRevenue = allPaidPayments
+      .filter(p => p.paymentMethod === 'Online Transaction' || !p.paymentMethod)
+      .reduce((sum, p) => sum + p.amount, 0);
+    const cashRevenue = allPaidPayments
+      .filter(p => p.paymentMethod === 'Cash Transaction')
+      .reduce((sum, p) => sum + p.amount, 0);
+
     // 2. Revenue Analytics (Last 6 Months)
     const revenueData = [];
     for (let i = 5; i >= 0; i--) {
       const start = new Date();
       start.setMonth(start.getMonth() - i);
       start.setDate(1);
-      start.setHours(0,0,0,0);
+      start.setHours(0, 0, 0, 0);
 
       const end = new Date(start);
       end.setMonth(end.getMonth() + 1);
@@ -99,7 +111,7 @@ export const getDashboardStats = async (req, res) => {
 
       const presentCount = await Attendance.countDocuments({
         date: { $gte: start, $lt: end },
-        $or: [{ morningStatus: 'present' }, { eveningStatus: 'present' }]
+        status: 'Present'
       });
 
       const dayLabel = start.toLocaleDateString('default', { weekday: 'short', day: 'numeric' });
@@ -117,7 +129,10 @@ export const getDashboardStats = async (req, res) => {
           totalPresent: todayTotalPresent,
           totalAbsent: todayTotalAbsent
         },
-        monthlyRevenue
+        monthlyRevenue,
+        totalRevenue,
+        onlineRevenue,
+        cashRevenue
       },
       charts: {
         revenueData,
@@ -167,7 +182,7 @@ export const getMembers = async (req, res) => {
 // @route   PUT /api/admin/members/:id
 // @access  Private/Admin
 export const updateMember = async (req, res) => {
-  const { name, email, mobile, age, gender, address, emergencyContact, membership } = req.body;
+  const { name, email, mobile, age, gender, address, emergencyContact, height, weight, membership } = req.body;
 
   try {
     const user = await User.findById(req.params.id);
@@ -182,6 +197,8 @@ export const updateMember = async (req, res) => {
     user.gender = gender || user.gender;
     user.address = address || user.address;
     user.emergencyContact = emergencyContact || user.emergencyContact;
+    user.height = height !== undefined ? Number(height) : user.height;
+    user.weight = weight !== undefined ? Number(weight) : user.weight;
 
     if (membership) {
       user.membership.plan = membership.plan || user.membership.plan;
@@ -209,7 +226,7 @@ export const deleteMember = async (req, res) => {
     }
 
     // Clean up associated attendance, payments, notifications
-    await Attendance.deleteMany({ user: user._id });
+    await Attendance.deleteMany({ userId: user._id });
     await Payment.deleteMany({ user: user._id });
     await Notification.deleteMany({ user: user._id });
     await User.findByIdAndDelete(req.params.id);
@@ -224,10 +241,13 @@ export const deleteMember = async (req, res) => {
 // @route   GET /api/admin/payments
 // @access  Private/Admin
 export const getAllPayments = async (req, res) => {
-  const { status } = req.query;
+  const { status, paymentMethod } = req.query;
   let query = {};
   if (status && status !== 'all') {
     query.status = status;
+  }
+  if (paymentMethod && paymentMethod !== 'all') {
+    query.paymentMethod = paymentMethod;
   }
 
   try {
@@ -283,7 +303,6 @@ export const triggerExpiryReminders = async (req, res) => {
         await client.save();
         templateType = 'overdue';
       } else if (client.membership.status === 'expired' && daysLeft < 0 && daysLeft >= -3) {
-        // Repeated overdue notice for recently expired (within 3 days)
         templateType = 'overdue';
       }
 
@@ -309,6 +328,168 @@ export const triggerExpiryReminders = async (req, res) => {
 
   } catch (error) {
     console.error('Error triggering reminders:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Admin: Create new gym member manually
+// @route   POST /api/admin/members
+// @access  Private/Admin
+export const createMember = async (req, res) => {
+  const {
+    name, email, mobile, password, age, gender, address, emergencyContact,
+    height, weight,
+    membership, // { plan, startDate, endDate, status }
+    payment // { amount, paymentMethod }
+  } = req.body;
+
+  try {
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ message: 'User with this email already exists.' });
+    }
+
+    const newUser = await User.create({
+      name,
+      email,
+      mobile,
+      password,
+      role: 'client',
+      age: age ? Number(age) : undefined,
+      gender,
+      address,
+      emergencyContact,
+      height: height ? Number(height) : undefined,
+      weight: weight ? Number(weight) : undefined,
+      membership: {
+        plan: membership?.plan || 'none',
+        startDate: membership?.startDate ? new Date(membership.startDate) : undefined,
+        endDate: membership?.endDate ? new Date(membership.endDate) : undefined,
+        status: membership?.status || 'none'
+      }
+    });
+
+    // Generate paid payment record immediately
+    if (payment && payment.amount) {
+      await Payment.create({
+        user: newUser._id,
+        amount: Number(payment.amount),
+        paymentMethod: payment.paymentMethod || 'Cash Transaction',
+        membershipPlan: membership?.plan || 'none',
+        razorpayOrderId: `manual_${Math.random().toString(36).substring(2, 12)}`,
+        razorpayPaymentId: `pay_manual_${Math.random().toString(36).substring(2, 12)}`,
+        status: 'paid',
+        paidAt: new Date()
+      });
+    }
+
+    res.status(201).json(newUser);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Admin: List members expiring soon, expiring today, or expired for manual reminders
+// @route   GET /api/admin/reminders/pending
+// @access  Private/Admin
+export const getPendingRemindersList = async (req, res) => {
+  const { search, statusFilter } = req.query; // statusFilter = 'soon' | 'today' | 'expired' | 'all'
+
+  try {
+    const today = getStartOfDay(new Date());
+    const clients = await User.find({ role: 'client', 'membership.plan': { $ne: 'none' } });
+
+    const list = [];
+
+    for (let client of clients) {
+      if (!client.membership || !client.membership.endDate) continue;
+
+      const endDate = getStartOfDay(client.membership.endDate);
+      const timeDiff = endDate.getTime() - today.getTime();
+      const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+      let reminderStatus = ''; // 'soon' | 'today' | 'expired'
+      let statusLabel = '';
+
+      if (daysLeft > 0 && daysLeft <= 7 && client.membership.status === 'active') {
+        reminderStatus = 'soon';
+        statusLabel = 'Expiring Soon';
+      } else if (daysLeft === 0 && client.membership.status === 'active') {
+        reminderStatus = 'today';
+        statusLabel = 'Expiring Today';
+      } else if (client.membership.status === 'expired' || daysLeft < 0) {
+        reminderStatus = 'expired';
+        statusLabel = 'Expired';
+      }
+
+      if (!reminderStatus) continue; // Not expiring within 7 days, today, or expired
+
+      // Apply search filters
+      if (search) {
+        const query = search.toLowerCase();
+        const nameMatch = client.name.toLowerCase().includes(query);
+        const mobileMatch = client.mobile.includes(query);
+        if (!nameMatch && !mobileMatch) continue;
+      }
+
+      // Apply status filter
+      if (statusFilter && statusFilter !== 'all' && statusFilter !== reminderStatus) {
+        continue;
+      }
+
+      // Find last payment date
+      const lastPayment = await Payment.findOne({ user: client._id, status: 'paid' }).sort({ paidAt: -1 });
+
+      list.push({
+        _id: client._id,
+        name: client.name,
+        mobile: client.mobile,
+        plan: client.membership.plan,
+        lastPaymentDate: lastPayment ? lastPayment.paidAt : null,
+        expiryDate: client.membership.endDate,
+        daysRemaining: daysLeft,
+        membershipStatus: statusLabel,
+        statusKey: reminderStatus
+      });
+    }
+
+    // Sort by days remaining (ascending, expired/urgent first)
+    list.sort((a, b) => a.daysRemaining - b.daysRemaining);
+
+    res.json(list);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Admin: Send manual mock WhatsApp reminder to member
+// @route   POST /api/admin/reminders/send
+// @access  Private/Admin
+export const sendManualReminder = async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+    const client = await User.findById(userId);
+    if (!client) {
+      return res.status(404).json({ message: 'Client not found' });
+    }
+
+    const today = getStartOfDay(new Date());
+    const endDate = getStartOfDay(client.membership.endDate);
+    const timeDiff = endDate.getTime() - today.getTime();
+    const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+    const message = `Hello ${client.name},\n\nYour Olympus gym membership (${client.membership.plan.toUpperCase()}) ${
+      daysLeft < 0 ? 'expired on' : daysLeft === 0 ? 'expires today' : 'will expire on'
+    } ${client.membership.endDate.toLocaleDateString()}.\n\nPlease renew to continue your training sessions.\n\nThank you,\nOlympus Team`;
+
+    console.log('====================================================');
+    console.log(`[MANUAL WHATSAPP REMINDER] Dispatched API to +91${client.mobile}`);
+    console.log(`Message:\n${message}`);
+    console.log('====================================================');
+
+    res.json({ message: `Manual WhatsApp renewal reminder sent successfully to ${client.name}!` });
+  } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };

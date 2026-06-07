@@ -33,7 +33,9 @@ export const createOrder = async (req, res) => {
         user: req.user._id,
         amount: selectedPlan.priceInINR,
         razorpayOrderId: mockOrderId,
-        status: 'pending'
+        status: 'pending',
+        paymentMethod: 'Online Transaction',
+        membershipPlan: planName.toLowerCase()
       });
 
       return res.status(201).json({
@@ -60,7 +62,9 @@ export const createOrder = async (req, res) => {
       user: req.user._id,
       amount: selectedPlan.priceInINR,
       razorpayOrderId: order.id,
-      status: 'pending'
+      status: 'pending',
+      paymentMethod: 'Online Transaction',
+      membershipPlan: planName.toLowerCase()
     });
 
     res.status(201).json({
@@ -130,12 +134,18 @@ export const verifyPayment = async (req, res) => {
     );
 
     // Calculate dates
-    const startDate = new Date();
-    const endDate = new Date();
+    const user = await User.findById(req.user._id);
+    let startDate = new Date();
+
+    // Extend membership if current plan is active and endDate is in the future
+    if (user.membership && user.membership.status === 'active' && user.membership.endDate && new Date(user.membership.endDate) > new Date()) {
+      startDate = new Date(user.membership.endDate);
+    }
+
+    const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + (selectedPlan.durationMonths * 30));
 
     // Update User Membership
-    const user = await User.findById(req.user._id);
     user.membership = {
       plan: planName.toLowerCase(),
       startDate,
@@ -170,7 +180,7 @@ export const verifyPayment = async (req, res) => {
 export const getMyPayments = async (req, res) => {
   try {
     const payments = await Payment.find({ user: req.user._id }).sort({ createdAt: -1 });
-    res.json(payments);
+    return res.json(payments);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
