@@ -3,6 +3,7 @@ import Payment from '../models/Payment.js';
 import Attendance from '../models/Attendance.js';
 import Notification from '../models/Notification.js';
 import { sendWhatsAppMessage } from '../services/whatsappService.js';
+import { gym_full_name } from '../../frontend/src/constants/constants.js';
 
 // Helper to normalize dates
 const getStartOfDay = (date) => {
@@ -479,7 +480,7 @@ export const sendManualReminder = async (req, res) => {
     const timeDiff = endDate.getTime() - today.getTime();
     const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
-    const message = `Hello ${client.name},\n\nYour Olympus gym membership (${client.membership.plan.toUpperCase()}) ${
+    const message = `Hello ${client.name},\n\nYour ${gym_full_name} membership (${client.membership.plan.toUpperCase()}) ${
       daysLeft < 0 ? 'expired on' : daysLeft === 0 ? 'expires today' : 'will expire on'
     } ${client.membership.endDate.toLocaleDateString()}.\n\nPlease renew to continue your training sessions.\n\nThank you,\nOlympus Team`;
 

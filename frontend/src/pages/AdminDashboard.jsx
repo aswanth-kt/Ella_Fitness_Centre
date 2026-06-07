@@ -285,7 +285,7 @@ const AdminDashboard = () => {
       <div className="min-h-screen bg-deep-black flex items-center justify-center">
         <div className="text-center space-y-4">
           <Loader className="h-10 w-10 text-gold animate-spin mx-auto" />
-          <p className="text-gray-400 text-sm">Loading Olympus Control Center...</p>
+          <p className="text-gray-400 text-sm">Loading {gym_first_name} Control Center...</p>
         </div>
       </div>
     );
