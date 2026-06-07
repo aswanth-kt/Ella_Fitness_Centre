@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { Dumbbell, User as UserIcon, Mail, Phone, Lock, Calendar, MapPin, Heart, Shield, Loader, AlertCircle } from 'lucide-react';
+import { gym_first_name, gym_second_name } from '../constants/constants';
 
 const RegisterPage = () => {
   const { user, register } = useContext(AuthContext);
@@ -81,7 +82,7 @@ const RegisterPage = () => {
               <Dumbbell className="h-6 w-6" />
             </div>
             <span className="font-serif text-2xl font-bold tracking-wider text-gold-gradient">
-              OLYMPUS<span className="text-white font-sans text-sm font-normal tracking-widest ml-1 uppercase">GYM</span>
+              {gym_first_name}<span className="text-white font-sans text-sm font-normal tracking-widest ml-1 uppercase">{gym_second_name}</span>
             </span>
           </Link>
           

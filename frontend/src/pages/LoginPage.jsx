@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { Dumbbell, Mail, Lock, Loader, AlertCircle } from 'lucide-react';
 import axios from '../api/axios.js';
+import { gym_first_name, gym_second_name } from '../constants/constants.js';
 
 const LoginPage = () => {
   const { user, login } = useContext(AuthContext);
@@ -87,7 +88,7 @@ const LoginPage = () => {
               <Dumbbell className="h-6 w-6" />
             </div>
             <span className="font-serif text-2xl font-bold tracking-wider text-gold-gradient">
-              OLYMPUS<span className="text-white font-sans text-sm font-normal tracking-widest ml-1 uppercase">GYM</span>
+              {gym_first_name}<span className="text-white font-sans text-sm font-normal tracking-widest ml-1 uppercase">{gym_second_name}</span>
             </span>
           </Link>
           
@@ -254,7 +255,7 @@ const LoginPage = () => {
           <p className="mt-8 text-center text-sm text-gray-400">
             Don't have an account yet?{' '}
             <Link to="/register" className="font-semibold text-gold hover:text-gold-hover transition-colors">
-              Join Olympus now
+              Join {gym_first_name} now
             </Link>
           </p>
         )}

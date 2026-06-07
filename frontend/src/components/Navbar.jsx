@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { Menu, X, Dumbbell, User as UserIcon, LogOut, Shield } from 'lucide-react';
+import { gym_first_name, gym_second_name } from '../constants/constants';
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
@@ -45,7 +46,7 @@ const Navbar = () => {
               <Dumbbell className="h-6 w-6" />
             </div>
             <span className="font-serif text-2xl font-bold tracking-wider text-gold-gradient group-hover:opacity-95 transition-opacity">
-              OLYMPUS<span className="text-white font-sans text-sm font-normal tracking-widest ml-1 uppercase">GYM</span>
+              {gym_first_name}<span className="text-white font-sans text-sm font-normal tracking-widest ml-1 uppercase">{gym_second_name}</span>
             </span>
           </Link>
 

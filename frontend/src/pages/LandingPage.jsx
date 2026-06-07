@@ -7,6 +7,7 @@ import {
   ChevronRight, Play, CheckCircle2, Award, Zap, Shield, Users, Heart, Star, 
   MapPin, Phone, Mail, MessageSquare, Flame, Trophy, ShieldAlert 
 } from 'lucide-react';
+import { gym_first_name } from '../constants/constants';
 
 const LandingPage = () => {
   const { user } = useContext(AuthContext);
@@ -462,7 +463,7 @@ const LandingPage = () => {
               <div>
                 <span className="text-gold font-bold tracking-widest text-sm uppercase">GET IN TOUCH</span>
                 <h2 className="font-serif text-4xl font-extrabold text-white mt-2">
-                  OLYMPUS <span className="text-gold-gradient">HEADQUARTERS</span>
+                  {gym_first_name} <span className="text-gold-gradient">HEADQUARTERS</span>
                 </h2>
                 <p className="text-gray-400 text-sm mt-4 font-light leading-relaxed">
                   Have questions about our trainers, facilities, or payment methods? Reach out via phone or email, or drop by our facility for a guided tour.

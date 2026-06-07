@@ -6,6 +6,7 @@ import {
   Heart, CheckCircle, AlertTriangle, AlertCircle, Edit3, Loader, CheckSquare 
 } from 'lucide-react';
 import axios from '../api/axios.js';
+import { gym_first_name } from '../constants/constants.js';
 
 const ClientDashboard = () => {
   const { user, updateProfile, refreshUser } = useContext(AuthContext);
@@ -49,7 +50,7 @@ const ClientDashboard = () => {
   // Handle payment success banner
   useEffect(() => {
     if (location.state?.paymentSuccess) {
-      setSuccessMsg('Membership activated successfully! Welcome to the Olympus family.');
+      setSuccessMsg(`Membership activated successfully! Welcome to the ${gym_first_name} family.`);
       // Clean up router state
       window.history.replaceState({}, document.title);
     }

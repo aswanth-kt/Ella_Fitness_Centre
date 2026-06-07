@@ -5,6 +5,7 @@ import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend 
 } from 'recharts';
+import { gym_first_name } from '../constants/constants.js';
 
 const AdminDashboard = () => {
   // Tabs: 'overview', 'members', 'attendance', 'payments', 'reminders'
@@ -232,7 +233,7 @@ const AdminDashboard = () => {
       <div className="min-h-screen bg-deep-black flex items-center justify-center">
         <div className="text-center space-y-4">
           <Loader className="h-10 w-10 text-gold animate-spin mx-auto" />
-          <p className="text-gray-400 text-sm">Loading Olympus Control Center...</p>
+          <p className="text-gray-400 text-sm">Loading {gym_first_name} Control Center...</p>
         </div>
       </div>
     );
@@ -261,7 +262,7 @@ const AdminDashboard = () => {
           <div>
             <div className="flex items-center space-x-2">
               <Shield className="h-6 w-6 text-gold" />
-              <h1 className="text-3xl font-bold tracking-tight">Olympus Admin Panel</h1>
+              <h1 className="text-3xl font-bold tracking-tight">{gym_first_name} Admin Panel</h1>
             </div>
             <p className="text-gray-400 text-sm mt-1">Unified command hub for memberships, check-ins, revenues, and alerts.</p>
           </div>

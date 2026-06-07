@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Dumbbell, Phone, Mail, MapPin, MessageSquare } from 'lucide-react';
+import { gym_first_name, gym_full_name } from '../constants/constants';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -20,11 +21,11 @@ const Footer = () => {
                 <Dumbbell className="h-6 w-6" />
               </div>
               <span className="font-serif text-2xl font-bold tracking-wider text-gold-gradient">
-                OLYMPUS<span className="text-white font-sans text-sm font-normal tracking-widest ml-1 uppercase">GYM</span>
+                {gym_first_name}<span className="text-white font-sans text-sm font-normal tracking-widest ml-1 uppercase">{gym_full_name}</span>
               </span>
             </Link>
             <p className="text-sm leading-relaxed text-gray-400">
-              Ella's Fitness Centre Gym offers a premium, modern fitness facility designed to unleash your ultimate physical potential. Work with elite trainers and access high-end amenities.
+              {gym_full_name} offers a premium, modern fitness facility designed to unleash your ultimate physical potential. Work with elite trainers and access high-end amenities.
             </p>
             <div className="flex space-x-4">
               <a href="https://instagram.com" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-gold transition-colors p-2 glass rounded-full hover:scale-110 duration-300 flex items-center justify-center" aria-label="Instagram">
@@ -74,7 +75,7 @@ const Footer = () => {
               <li className="flex items-start space-x-3">
                 <MapPin className="h-5 w-5 text-gold shrink-0" />
                 <span className="text-sm">
-                  108 Olympus Towers, Golden Avenue, Sector 62, Noida, UP - 201301
+                  108 {gym_full_name} Towers, Golden Avenue, Sector 62, Noida, UP - 201301
                 </span>
               </li>
               <li className="flex items-center space-x-3">
@@ -120,7 +121,7 @@ const Footer = () => {
 
         {/* Bottom Bar */}
         <div className="border-t border-gold/10 pt-8 mt-12 flex flex-col md:flex-row justify-between items-center text-xs">
-          <p>&copy; {currentYear} Olympus Gym. All rights reserved. Designed for Premium Fitness.</p>
+          <p>&copy; {currentYear} {gym_first_name} Gym. All rights reserved. Designed for Premium Fitness.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <a href="#privacy" className="hover:text-gold transition-colors">Privacy Policy</a>
             <a href="#terms" className="hover:text-gold transition-colors">Terms of Service</a>
