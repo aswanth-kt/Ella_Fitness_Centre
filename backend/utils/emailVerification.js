@@ -80,7 +80,7 @@ const sendNodeMailer = async (email, otp) => {
                                   </div>
 
                                   <p style="font-size:15px;color:#6b7280;line-height:1.6;">
-                                      This OTP is valid for <strong>10 minutes</strong>.
+                                      This OTP is valid for <strong>5 minutes</strong>.
                                       Do not share this code with anyone.
                                   </p>
 
