@@ -15,10 +15,15 @@ const LoginPage = () => {
   // Forgot password states
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotMode, setForgotMode] = useState(false);
-  const [forgotSuccessMessage, setForgotSuccessMessage] = useState('');
-  const [forgotError, setForgotError] = useState('');
-  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1);
 
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+const [forgotSuccessMessage, setForgotSuccessMessage] = useState('');
+const [forgotError, setForgotError] = useState('');
+const [forgotLoading, setForgotLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -54,25 +59,79 @@ const LoginPage = () => {
     }
   };
 
-  const handleForgotPassword = async (e) => {
+  const handleSendOTP = async (e) => {
     e.preventDefault();
+
     if (!forgotEmail) {
       setForgotError('Please enter your email address');
       return;
     }
+
     setForgotError('');
     setForgotSuccessMessage('');
     setForgotLoading(true);
 
     try {
-      const { data } = await axios.post('/auth/forgot-password', { email: forgotEmail });
+      const { data } = await axios.post('/auth/send-otp', {
+        email: forgotEmail,
+      });
+
       setForgotSuccessMessage(data.message);
+      setForgotStep(2);
     } catch (err) {
-      setForgotError(err.response?.data?.message || 'Failed to request reset. Please try again.');
+      setForgotError(
+        err.response?.data?.message || 'Failed to send OTP'
+      );
     } finally {
       setForgotLoading(false);
     }
   };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+
+    if (!otp || !newPassword || !confirmPassword) {
+      return setForgotError('Please fill all fields');
+    }
+
+    if (newPassword !== confirmPassword) {
+      return setForgotError('Passwords do not match');
+    }
+
+    setForgotError('');
+    setForgotSuccessMessage('');
+    setForgotLoading(true);
+
+    try {
+      const { data } = await axios.patch('/auth/reset-password', {
+        email: forgotEmail,
+        otp,
+        password: newPassword,
+      });
+
+      setForgotSuccessMessage(data.message);
+
+      setTimeout(() => {
+        setForgotMode(false);
+        setForgotStep(1);
+
+        setForgotEmail('');
+        setOtp('');
+        setNewPassword('');
+        setConfirmPassword('');
+
+        setForgotError('');
+        setForgotSuccessMessage('');
+      }, 2000);
+    } catch (err) {
+      setForgotError(
+        err.response?.data?.message || 'Failed to reset password'
+      );
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-deep-black flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
@@ -183,7 +242,14 @@ const LoginPage = () => {
             </form>
           ) : (
             /* Forgot Password Form */
-            <form onSubmit={handleForgotPassword} className="space-y-6">
+            <form
+              onSubmit={
+                forgotStep === 1
+                  ? handleSendOTP
+                  : handleResetPassword
+              }
+              className="space-y-6"
+            >
               {forgotError && (
                 <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl p-4 mb-2 flex items-start space-x-3">
                   <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
@@ -193,59 +259,130 @@ const LoginPage = () => {
 
               {forgotSuccessMessage && (
                 <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm rounded-xl p-4 mb-2">
-                  <p className="font-semibold mb-2">Simulated Password Reset Successful:</p>
-                  <p className="leading-relaxed whitespace-pre-wrap">{forgotSuccessMessage}</p>
+                  {forgotSuccessMessage}
                 </div>
               )}
 
-              <div>
-                <label className="block text-xs font-bold tracking-wider text-gray-400 uppercase mb-2">
-                  Registered Email Address
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500">
-                    <Mail className="h-5 w-5" />
+              {forgotStep === 1 ? (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold tracking-wider text-gray-400 uppercase mb-2">
+                      Registered Email Address
+                    </label>
+
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500">
+                        <Mail className="h-5 w-5" />
+                      </div>
+
+                      <input
+                        type="email"
+                        required
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        className="block w-full pl-11 pr-4 py-3.5 bg-black/40 border border-gold/15 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-colors"
+                        placeholder="name@example.com"
+                      />
+                    </div>
                   </div>
-                  <input
-                    type="email"
-                    required
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                    className="block w-full pl-11 pr-4 py-3.5 bg-black/40 border border-gold/15 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-colors"
-                    placeholder="name@example.com"
-                  />
-                </div>
-              </div>
 
-              <div className="flex flex-col space-y-3">
-                <button
-                  type="submit"
-                  disabled={forgotLoading}
-                  className="w-full py-4 bg-gradient-to-r from-premium-yellow to-gold text-deep-black font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-gold/25 hover:scale-[1.02] active:scale-[0.98] transition-all flex justify-center items-center space-x-2 cursor-pointer"
-                >
-                  {forgotLoading ? (
-                    <>
-                      <Loader className="h-4 w-4 animate-spin text-deep-black" />
-                      <span>GENERATING CODE...</span>
-                    </>
-                  ) : (
-                    <span>RESET PASSWORD</span>
-                  )}
-                </button>
+                  <button
+                    type="submit"
+                    disabled={forgotLoading}
+                    className="w-full py-4 bg-gradient-to-r from-premium-yellow to-gold text-deep-black font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-gold/25 hover:scale-[1.02] active:scale-[0.98] transition-all flex justify-center items-center space-x-2 cursor-pointer"
+                  >
+                    {forgotLoading ? (
+                      <>
+                        <Loader className="h-4 w-4 animate-spin text-deep-black" />
+                        <span>SENDING OTP...</span>
+                      </>
+                    ) : (
+                      <span>SEND OTP</span>
+                    )}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold tracking-wider text-gray-400 uppercase mb-2">
+                      OTP Code
+                    </label>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setForgotMode(false);
-                    setError('');
-                    setForgotError('');
-                    setForgotSuccessMessage('');
-                  }}
-                  className="w-full py-3 border border-gold/25 text-gold font-bold text-xs tracking-wider rounded-xl hover:bg-gold/10 transition-colors"
-                >
-                  BACK TO LOGIN
-                </button>
-              </div>
+                    <input
+                      type="text"
+                      required
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      className="block w-full px-4 py-3.5 bg-black/40 border border-gold/15 rounded-xl text-white focus:outline-none focus:border-gold"
+                      placeholder="Enter OTP"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold tracking-wider text-gray-400 uppercase mb-2">
+                      New Password
+                    </label>
+
+                    <input
+                      type="password"
+                      required
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="block w-full px-4 py-3.5 bg-black/40 border border-gold/15 rounded-xl text-white focus:outline-none focus:border-gold"
+                      placeholder="Enter new password"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold tracking-wider text-gray-400 uppercase mb-2">
+                      Confirm Password
+                    </label>
+
+                    <input
+                      type="password"
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="block w-full px-4 py-3.5 bg-black/40 border border-gold/15 rounded-xl text-white focus:outline-none focus:border-gold"
+                      placeholder="Confirm password"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={forgotLoading}
+                    className="w-full py-4 bg-gradient-to-r from-premium-yellow to-gold text-deep-black font-extrabold text-xs tracking-wider rounded-xl shadow-lg shadow-gold/25 hover:scale-[1.02] active:scale-[0.98] transition-all flex justify-center items-center space-x-2 cursor-pointer"
+                  >
+                    {forgotLoading ? (
+                      <>
+                        <Loader className="h-4 w-4 animate-spin text-deep-black" />
+                        <span>RESETTING...</span>
+                      </>
+                    ) : (
+                      <span>RESET PASSWORD</span>
+                    )}
+                  </button>
+                </>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setForgotMode(false);
+                  setForgotStep(1);
+
+                  setForgotEmail('');
+                  setOtp('');
+                  setNewPassword('');
+                  setConfirmPassword('');
+
+                  setForgotError('');
+                  setForgotSuccessMessage('');
+                }}
+                className="w-full py-3 border border-gold/25 text-gold font-bold text-xs tracking-wider rounded-xl hover:bg-gold/10 transition-colors"
+              >
+                BACK TO LOGIN
+              </button>
             </form>
           )}
         </div>

@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import session from 'express-session';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
@@ -35,6 +36,16 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === "development" ? false : true,
+    maxAge: 1000 * 60 * 60 * 24   // Cookie lifespan: 1 day (in milliseconds)
+  }
+}))
+
 
 // API Routes
 app.use('/api/auth', authRoutes);
