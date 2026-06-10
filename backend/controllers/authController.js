@@ -224,8 +224,8 @@ export const sendOTP = async (req, res) => {
     };
     await req.session.save();
 
-    console.log("Session ID:", req.sessionID);
-    console.log("Session:", req.session);
+    // console.log("Session ID:", req.sessionID);
+    // console.log("Session:", req.session);
 
     res.json({message: "OTP send"})
     
@@ -249,9 +249,9 @@ export const resetPassword = async (req, res) => {
 
     const resetData = req.session.resetData;
 
-    console.log("Session ID:", req.sessionID);
-    console.log("Session:", req.session);
-    console.log("Reset Data:", req.session.resetData);
+    // console.log("Session ID:", req.sessionID);
+    // console.log("Session:", req.session);
+    // console.log("Reset Data:", req.session.resetData);
 
     if (!resetData) {
       return res.status(400).json({
