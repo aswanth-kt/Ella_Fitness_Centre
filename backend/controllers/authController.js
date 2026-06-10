@@ -1,5 +1,7 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import generateOtp from '../utils/otpGenerator.js';
+import sendNodeMailer from '../utils/emailVerification.js';
 
 // Helper to generate JWT token
 const generateToken = (id) => {
@@ -185,6 +187,99 @@ export const forgotPassword = async (req, res) => {
       message: `Reset code generated! (MOCKED) Your password has been reset to: ${tempPassword}. Please log in and change your password in your profile.`,
       tempPassword
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+// @desc    Sending OTP to memeber email
+// @route   POST /api/auth/send-otp
+// @access  
+export const sendOTP = async (req, res) => {
+  try {
+
+    const { email } = req.body;
+
+    const user = await User.findOne({ email })
+    if (!user) {
+      return res.status(404).json({ message: 'No user registered with this email' });
+    };
+
+    const otp = generateOtp()
+
+    const emailSent = await sendNodeMailer(email, otp)
+
+    if (!emailSent) {
+      return res.status(400)
+      .json({message: "Failed to send email. Please try again later"})
+    };
+
+    // store otp, email in session for veryfy user typed otp
+    req.session.resetData = {
+      email,
+      otp,
+      expiredAt: Date.now() + 5 * 60 * 1000
+    };
+
+    res.json({message: "OTP send"})
+    
+  } catch (error) {
+    console.log("Nodemailer Error logged:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    reset password and save to DB
+// @route   POST /api/auth/reset-password
+// @access  
+export const resetPassword = async (req, res) => {
+  try {
+
+    const {email, otp, password} = req.body
+    if (!email || !otp || !password) {
+      return res.status(400)
+      .json({message: "All fields are required"})
+    };
+
+    const resetData = req.session.resetData;
+
+    if (!resetData) {
+      return res.status(400).json({
+        message: "OTP not found"
+      });
+    }
+
+    // checking otp is expire
+    if (Date.now() > resetData.expiresAt) {
+      return res.status(400).json({
+        message: "OTP expired"
+      });
+    }
+
+    if (
+      resetData.email !== email ||
+      String(resetData.otp) !== String(otp)
+    ) {
+      return res.status(400)
+      .json({message: "Invalid OTP"})
+    }
+
+    const user = await User.findOne({ email });
+    
+    if (!user) {
+      return res.status(404)
+      .json({message: "If an account exists, OTP has been sent"})
+    };
+
+    user.password = password;
+    await user.save();
+
+    // session cleared after success
+    delete req.session.resetData;
+
+    res.json({message: "Password reset complete"})
+    
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
