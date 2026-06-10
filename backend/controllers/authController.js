@@ -216,7 +216,6 @@ export const sendOTP = async (req, res) => {
     };
 
     // store otp, email in session for veryfy user typed otp
-    console.log('Session ID:', req.sessionID);
     req.session.resetData = {
       email,
       otp,

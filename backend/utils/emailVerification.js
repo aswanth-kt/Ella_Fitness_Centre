@@ -7,19 +7,20 @@ const sendNodeMailer = async (email, otp) => {
       port: 587,
       secure: false,
       requireTLS: true,
+      family: 4,
       auth: {
         user: process.env.NODEMAILER_EMAIL,
         pass: process.env.NODEMAILER_PASSWORD,
       },
     });
 
-    // const mailOptions = {
-    //   from: process.env.NODEMAILER_EMAIL,
-    //   to: email,
-    //   subject: "Your OTP for password reset",
-    //   text: `Your OTP is ${otp}`,
-    //   html: `<b><h4> Your OTP : ${otp} </h4></b>`,
-    // };
+    transporter.verify((error, success) => {
+        if (error) {
+            console.log("SMTP Error:", error);
+        } else {
+            console.log("SMTP Ready");
+        }
+    });
 
     const mailOptions = {
       from: process.env.NODEMAILER_EMAIL,
