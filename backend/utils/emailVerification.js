@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer"
+import nodemailer from "nodemailer";
 
 const sendNodeMailer = async (email, otp) => {
   try {
@@ -14,12 +14,8 @@ const sendNodeMailer = async (email, otp) => {
       },
     });
 
-    transporter.verify((error, success) => {
-        if (error) {
-            console.log("SMTP Error:", error);
-        } else {
-            console.log("SMTP Ready");
-        }
+    transporter.verify((err, success) => {
+      console.log("VERIFY:", err || success);
     });
 
     const mailOptions = {
@@ -116,7 +112,6 @@ const sendNodeMailer = async (email, otp) => {
     console.log("Email sent : ", email);
     // console.log("Email sent info : ", info);
     return true;
-
   } catch (error) {
     console.error("Error sending email", error);
     return false;
