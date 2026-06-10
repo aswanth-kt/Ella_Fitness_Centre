@@ -2,12 +2,16 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import session from 'express-session';
+import MongoStore from "connect-mongo";
+import helmet from "helmet";
+import compression from 'compression';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import attendanceRoutes from './routes/attendanceRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
+import { appLimiter } from './middleware/rateLimitMiddleware.js';
 
 dotenv.config();
 
@@ -35,16 +39,31 @@ app.use(cors({
   },
   credentials: true
 }));
-app.use(express.json());
+
+app.use(helmet());
+
+app.use(compression());   // Reduces response size.
+
+app.use(express.json({limit: '16kb'}));
+
+app.set('trust proxy', 1);
+
+app.use(appLimiter)
+
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URI
+  }),
   cookie: {
-    secure: process.env.NODE_ENV === "development" ? false : true,
-    maxAge: 1000 * 60 * 60 * 24   // Cookie lifespan: 1 day (in milliseconds)
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production' ? true : false,
+    sameSite: 'none',
+    maxAge: 1000 * 60 * 60 * 24
   }
-}))
+}));
 
 
 // API Routes
