@@ -216,11 +216,16 @@ export const sendOTP = async (req, res) => {
     };
 
     // store otp, email in session for veryfy user typed otp
+    console.log('Session ID:', req.sessionID);
     req.session.resetData = {
       email,
       otp,
       expiredAt: Date.now() + 5 * 60 * 1000
     };
+    await req.session.save();
+
+    console.log("Session ID:", req.sessionID);
+    console.log("Session:", req.session);
 
     res.json({message: "OTP send"})
     
@@ -244,6 +249,10 @@ export const resetPassword = async (req, res) => {
 
     const resetData = req.session.resetData;
 
+    console.log("Session ID:", req.sessionID);
+    console.log("Session:", req.session);
+    console.log("Reset Data:", req.session.resetData);
+
     if (!resetData) {
       return res.status(400).json({
         message: "OTP not found"
@@ -251,7 +260,7 @@ export const resetPassword = async (req, res) => {
     }
 
     // checking otp is expire
-    if (Date.now() > resetData.expiresAt) {
+    if (Date.now() > resetData.expiredAt) {
       return res.status(400).json({
         message: "OTP expired"
       });
@@ -277,6 +286,7 @@ export const resetPassword = async (req, res) => {
 
     // session cleared after success
     delete req.session.resetData;
+    await req.session.save();
 
     res.json({message: "Password reset complete"})
     
