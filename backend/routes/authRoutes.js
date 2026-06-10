@@ -21,7 +21,7 @@ router.route('/profile')
   .get(protect, getUserProfile)
   .put(protect, updateUserProfile);
 
-router.post('/send-otp', sendOTP);
-router.patch('/reset-password', resetPassword);
+router.post('/send-otp', otpLimiter, sendOTP);
+router.patch('/reset-password', otpLimiter, resetPassword);
 
 export default router;
