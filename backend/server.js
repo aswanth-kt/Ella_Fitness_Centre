@@ -5,6 +5,7 @@ import session from 'express-session';
 import MongoStore from "connect-mongo";
 import helmet from "helmet";
 import compression from 'compression';
+
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
@@ -40,30 +41,36 @@ app.use(cors({
   credentials: true
 }));
 
+// Body Parser
+app.use(express.json({ limit: '16kb' }));
+
+// Security
 app.use(helmet());
 
-app.use(compression());   // Reduces response size.
-
-app.use(express.json({limit: '16kb'}));
+// Compression
+app.use(compression());
 
 app.set('trust proxy', 1);
 
-app.use(appLimiter)
-
 app.use(session({
+  name: 'gym.sid',
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
+
   store: MongoStore.create({
-    mongoUrl: process.env.MONGO_URI
+    mongoUrl: process.env.MONGO_URI,
   }),
+
   cookie: {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production' ? true : false,
-    sameSite: 'none',
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     maxAge: 1000 * 60 * 60 * 24
   }
 }));
+
+app.use(appLimiter)
 
 
 // API Routes
@@ -71,6 +78,16 @@ app.use('/api/auth', authRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/admin', adminRoutes);
+
+// Health Check
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    status: 'OK',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Base route
 app.get('/', (req, res) => {
