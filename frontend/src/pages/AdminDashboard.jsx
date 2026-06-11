@@ -9,7 +9,8 @@ import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend 
 } from 'recharts';
-import { gym_first_name } from '../constants/constants.js';
+import { attendence_pagination_limit, gym_first_name } from '../constants/constants.js';
+import Pagination from '../components/Pagination.jsx';
 
 const AdminDashboard = () => {
   // Tabs: 'overview', 'members', 'attendance', 'payments', 'reminders'
@@ -71,6 +72,10 @@ const AdminDashboard = () => {
   // Recharts colors
   const GOLD_COLORS = ['#F5C842', '#D4AF37', '#aa841e', '#3A3A3A'];
 
+  // Paginations states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState();
+
   // Load stats and database entities
   const fetchStats = async () => {
     try {
@@ -117,9 +122,16 @@ const AdminDashboard = () => {
   const fetchDailyAttendance = async () => {
     try {
       const { data } = await axios.get('/attendance/daily', {
-        params: { date: attendanceDate }
+        params: { 
+          date: attendanceDate,
+          currentPage,
+        }
       });
-      setDailyAttendance(data);
+
+      setDailyAttendance(data.report);
+      setTotalPages(data.totalPages);
+      setCurrentPage(data.page)
+      
     } catch (err) {
       console.error('Error loading daily attendance sheets:', err);
     }
@@ -152,7 +164,7 @@ const AdminDashboard = () => {
     if (!loading) {
       fetchDailyAttendance();
     }
-  }, [attendanceDate]);
+  }, [attendanceDate, currentPage]);
 
   // Sync payment queries
   useEffect(() => {
@@ -810,6 +822,16 @@ const AdminDashboard = () => {
                       );
                     })
                   )}
+                  
+                  <Pagination
+                    current={currentPage}
+                    total={totalPages}
+                    totalItems={dailyAttendance.length}
+                    item="members"
+                    perPage={attendence_pagination_limit}
+                    onPageChange={(page) => setCurrentPage(page)}
+                  />
+
                 </tbody>
               </table>
             </div>

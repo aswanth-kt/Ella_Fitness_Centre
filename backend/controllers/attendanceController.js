@@ -1,3 +1,4 @@
+import { attendence_pagination_limit } from '../../frontend/src/constants/constants.js';
 import Attendance from '../models/Attendance.js';
 import User from '../models/User.js';
 
@@ -211,15 +212,30 @@ export const getDailyAttendance = async (req, res) => {
   const targetDate = normalizeDate(req.query.date);
 
   try {
+    const page = Number(req.query.currentPage);
+    const limit = attendence_pagination_limit;
+    const skip = (page - 1) * limit;
+
     const users = await User.find({ 
       role: 'client',
       'membership.status': 'active'
-    }).select('name email mobile membership');
-    const attendanceRecords = await Attendance.find({ date: targetDate });
+    }).select('name email mobile membership')
+    .sort({createdAt: -1})
+    .skip(skip)
+    .limit(limit);
+
+    const totalUsers = await User.countDocuments({ 
+      role: 'client',
+      'membership.status': 'active'
+    })
+    const totalPages = Math.ceil(totalUsers / limit)
+    
+    const attendanceRecords = await Attendance.find({ date: targetDate })
 
     // Combine users with their attendance status
     const report = users.map(user => {
       const record = attendanceRecords.find(rec => rec.userId.toString() === user._id.toString());
+
       return {
         _id: user._id,
         name: user.name,
@@ -228,11 +244,15 @@ export const getDailyAttendance = async (req, res) => {
         membershipStatus: user.membership?.status || 'none',
         session: record ? record.session : null,
         status: record ? record.status : 'Absent',
-        recordId: record ? record._id : null
+        recordId: record ? record._id : null,
       };
     });
 
-    res.json(report);
+    res.json({
+      report,
+      page,
+      totalPages
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
