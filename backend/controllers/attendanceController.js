@@ -211,7 +211,10 @@ export const getDailyAttendance = async (req, res) => {
   const targetDate = normalizeDate(req.query.date);
 
   try {
-    const users = await User.find({ role: 'client' }).select('name email mobile membership');
+    const users = await User.find({ 
+      role: 'client',
+      'membership.status': 'active'
+    }).select('name email mobile membership');
     const attendanceRecords = await Attendance.find({ date: targetDate });
 
     // Combine users with their attendance status
