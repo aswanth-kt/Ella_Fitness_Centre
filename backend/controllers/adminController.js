@@ -4,6 +4,7 @@ import Attendance from '../models/Attendance.js';
 import Notification from '../models/Notification.js';
 import { sendWhatsAppMessage } from '../services/whatsappService.js';
 import { gym_full_name } from '../../frontend/src/constants/constants.js';
+import { members_pagination_limit } from '../const/constants.js';
 
 // Helper to normalize dates
 const getStartOfDay = (date) => {
@@ -151,7 +152,7 @@ export const getDashboardStats = async (req, res) => {
 // @route   GET /api/admin/members
 // @access  Private/Admin
 export const getMembers = async (req, res) => {
-  const { search, status, plan } = req.query;
+  const { search, status, plan, memberPage } = req.query;
 
   let query = { role: 'client' };
 
@@ -172,8 +173,26 @@ export const getMembers = async (req, res) => {
   }
 
   try {
-    const members = await User.find(query).select('-password').sort({ createdAt: -1 });
-    res.json(members);
+
+    const page = Number(memberPage);
+    const limit = members_pagination_limit;
+    const skip = (page - 1) * limit;
+
+    const members = await User.find(query).select('-password')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+    console.log("query:", query)
+    const totalMembers = await User.countDocuments(query);
+    const totalPages = Math.ceil(totalMembers / limit);
+    console.log("total mem:", totalMembers, "totalPage:", totalPages)
+    
+    res.json({
+      members,
+      page,
+      totalPages
+    });
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
