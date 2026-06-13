@@ -9,7 +9,7 @@ import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend 
 } from 'recharts';
-import { attendence_pagination_limit, gym_first_name } from '../constants/constants.js';
+import { attendence_pagination_limit, gym_first_name, members_pagination_limit } from '../constants/constants.js';
 import Pagination from '../components/Pagination.jsx';
 
 const AdminDashboard = () => {
@@ -73,8 +73,12 @@ const AdminDashboard = () => {
   const GOLD_COLORS = ['#F5C842', '#D4AF37', '#aa841e', '#3A3A3A'];
 
   // Paginations states
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState();
+  // Memeber tasb
+  const [memberPage, setMemberPage] = useState(1);
+  const [membertotalPages, setMemberTotalPages] = useState(1);
+  // Attendance tab
+  const [attendancePage, setAttendancePage] = useState(1);
+  const [attendanceTotalPage, setAttendanceTotalPage] = useState(1);
 
   // Load stats and database entities
   const fetchStats = async () => {
@@ -89,9 +93,19 @@ const AdminDashboard = () => {
   const fetchMembers = async () => {
     try {
       const { data } = await axios.get('/admin/members', {
-        params: { search: memberSearch, status: memberStatusFilter, plan: memberPlanFilter }
+        params: { 
+          search: memberSearch, 
+          status: memberStatusFilter, 
+          plan: memberPlanFilter, 
+          memberPage,
+        }
       });
-      setMembers(data);
+      console.log("member data:", data)
+
+      setMembers(data.members);
+      setMemberTotalPages(data.totalPages)
+      setMemberPage(data.page);
+
     } catch (err) {
       console.error('Error loading members directory:', err);
     }
@@ -124,13 +138,13 @@ const AdminDashboard = () => {
       const { data } = await axios.get('/attendance/daily', {
         params: { 
           date: attendanceDate,
-          currentPage,
+          attendancePage,
         }
       });
 
       setDailyAttendance(data.report);
-      setTotalPages(data.totalPages);
-      setCurrentPage(data.page)
+      setAttendanceTotalPage(data.totalPages);
+      setAttendancePage(data.page)
       
     } catch (err) {
       console.error('Error loading daily attendance sheets:', err);
@@ -157,14 +171,14 @@ const AdminDashboard = () => {
     if (!loading) {
       fetchMembers();
     }
-  }, [memberSearch, memberStatusFilter, memberPlanFilter]);
+  }, [memberSearch, memberStatusFilter, memberPlanFilter, memberPage]);
 
   // Sync attendance date
   useEffect(() => {
     if (!loading) {
       fetchDailyAttendance();
     }
-  }, [attendanceDate, currentPage]);
+  }, [attendanceDate, attendancePage]);
 
   // Sync payment queries
   useEffect(() => {
@@ -713,6 +727,17 @@ const AdminDashboard = () => {
                       </tr>
                     ))
                   )}
+
+                  <Pagination
+                    current={memberPage}
+                    total={membertotalPages}
+                    totalItems={members.length}
+                    item="members"
+                    perPage={members_pagination_limit}
+                    onPageChange={(page) => setMemberPage(page)}
+                    colSpan={7}
+                  />
+
                 </tbody>
               </table>
             </div>
@@ -824,12 +849,13 @@ const AdminDashboard = () => {
                   )}
                   
                   <Pagination
-                    current={currentPage}
-                    total={totalPages}
+                    current={attendancePage}
+                    total={attendanceTotalPage}
                     totalItems={dailyAttendance.length}
                     item="members"
                     perPage={attendence_pagination_limit}
-                    onPageChange={(page) => setCurrentPage(page)}
+                    onPageChange={(page) => setAttendancePage(page)}
+                    colSpan={3}
                   />
 
                 </tbody>

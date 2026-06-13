@@ -1,4 +1,4 @@
-import { attendence_pagination_limit } from '../../frontend/src/constants/constants.js';
+import { attendence_pagination_limit } from '../const/constants.js';
 import Attendance from '../models/Attendance.js';
 import User from '../models/User.js';
 
@@ -212,7 +212,7 @@ export const getDailyAttendance = async (req, res) => {
   const targetDate = normalizeDate(req.query.date);
 
   try {
-    const page = Number(req.query.currentPage);
+    const page = Number(req.query.attendancePage);
     const limit = attendence_pagination_limit;
     const skip = (page - 1) * limit;
 

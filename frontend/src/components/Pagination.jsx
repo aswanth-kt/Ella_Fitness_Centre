@@ -1,4 +1,3 @@
-import { useState } from "react";
 
 function getPageRange(current, total) {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -10,10 +9,11 @@ function getPageRange(current, total) {
 
 export default function Pagination({
   current = 1,
-  total = 25,
-  totalItems = 247,
+  total = 1,
+  totalItems = 0,
   item = "",
   perPage = 10,
+  colSpan = 3,
   onPageChange = () => {},
 }) {
   const pages = getPageRange(current, total);
@@ -22,7 +22,7 @@ export default function Pagination({
 
   return (
     <tr>
-      <td colSpan="3" className="pt-4 pb-2">
+      <td colSpan={colSpan} className="pt-4 pb-2">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1">
 
           {/* Result count */}
