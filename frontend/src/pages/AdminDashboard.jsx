@@ -9,7 +9,7 @@ import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend 
 } from 'recharts';
-import { attendence_pagination_limit, gym_first_name, members_pagination_limit } from '../constants/constants.js';
+import { attendence_pagination_limit, gym_first_name, invoice_pagination_limit, members_pagination_limit } from '../constants/constants.js';
 import Pagination from '../components/Pagination.jsx';
 
 const AdminDashboard = () => {
@@ -79,6 +79,9 @@ const AdminDashboard = () => {
   // Attendance tab
   const [attendancePage, setAttendancePage] = useState(1);
   const [attendanceTotalPage, setAttendanceTotalPage] = useState(1);
+  // Invoice tab
+  const [invoicePage, setInvoicePage] = useState(1);
+  const [InvoiceTotalPage, setInvoiceTotalPage] = useState(1);
 
   // Load stats and database entities
   const fetchStats = async () => {
@@ -114,9 +117,17 @@ const AdminDashboard = () => {
   const fetchPayments = async () => {
     try {
       const { data } = await axios.get('/admin/payments', {
-        params: { status: paymentStatusFilter, paymentMethod: paymentMethodFilter }
+        params: { 
+          status: paymentStatusFilter, 
+          paymentMethod: paymentMethodFilter,
+          invoicePage
+        }
       });
-      setPayments(data);
+
+      setPayments(data.payments);
+      setInvoicePage(data.page);
+      setInvoiceTotalPage(data.totalPage);
+
     } catch (err) {
       console.error('Error loading payments:', err);
     }
@@ -185,7 +196,7 @@ const AdminDashboard = () => {
     if (!loading) {
       fetchPayments();
     }
-  }, [paymentStatusFilter, paymentMethodFilter]);
+  }, [paymentStatusFilter, paymentMethodFilter, invoicePage]);
 
   // Sync reminders tab queries
   useEffect(() => {
@@ -955,6 +966,17 @@ const AdminDashboard = () => {
                       </tr>
                     ))
                   )}
+
+                  <Pagination
+                    current={invoicePage}
+                    total={InvoiceTotalPage}
+                    totalItems={payments.length}
+                    item="payments"
+                    perPage={invoice_pagination_limit}
+                    onPageChange={(page) => setInvoicePage(page)}
+                    colSpan={7}
+                  />
+
                 </tbody>
               </table>
             </div>

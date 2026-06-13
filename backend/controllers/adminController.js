@@ -4,7 +4,7 @@ import Attendance from '../models/Attendance.js';
 import Notification from '../models/Notification.js';
 import { sendWhatsAppMessage } from '../services/whatsappService.js';
 import { gym_full_name } from '../../frontend/src/constants/constants.js';
-import { members_pagination_limit } from '../const/constants.js';
+import { invoice_pagination_limit, members_pagination_limit } from '../const/constants.js';
 
 // Helper to normalize dates
 const getStartOfDay = (date) => {
@@ -182,10 +182,9 @@ export const getMembers = async (req, res) => {
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
-    console.log("query:", query)
+
     const totalMembers = await User.countDocuments(query);
     const totalPages = Math.ceil(totalMembers / limit);
-    console.log("total mem:", totalMembers, "totalPage:", totalPages)
     
     res.json({
       members,
@@ -261,8 +260,9 @@ export const deleteMember = async (req, res) => {
 // @route   GET /api/admin/payments
 // @access  Private/Admin
 export const getAllPayments = async (req, res) => {
-  const { status, paymentMethod } = req.query;
+  const { status, paymentMethod, invoicePage } = req.query;
   let query = {};
+
   if (status && status !== 'all') {
     query.status = status;
   }
@@ -271,10 +271,25 @@ export const getAllPayments = async (req, res) => {
   }
 
   try {
+    const page = Number(invoicePage);
+    const limit = invoice_pagination_limit;
+    const skip = (page - 1) * limit;
+
     const payments = await Payment.find(query)
       .populate('user', 'name email mobile')
-      .sort({ createdAt: -1 });
-    res.json(payments);
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const toalPayments = await Payment.countDocuments(query);
+
+    const totalPage = Math.ceil(toalPayments / limit);
+
+    res.json({
+      payments,
+      page,
+      totalPage
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
