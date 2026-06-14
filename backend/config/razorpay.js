@@ -15,7 +15,7 @@ try {
     });
     console.log('Razorpay SDK Initialized Successfully.');
   } else {
-    console.log('Razorpay keys are mock or missing. Running in Mock Payment Mode.');
+    console.log('Razorpay keys are mock or missing.');
   }
 } catch (error) {
   console.error('Error initializing Razorpay SDK:', error.message);

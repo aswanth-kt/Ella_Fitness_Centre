@@ -7,7 +7,7 @@ import {
   ShieldCheck, CheckCircle2
 } from 'lucide-react';
 import axios from '../api/axios.js';
-import { gym_first_name, gym_second_name } from '../constants/constants';
+import { gym_first_name, gym_full_name, gym_second_name } from '../constants/constants';
 
 const ClientDashboard = () => {
   const { user, updateProfile, refreshUser } = useContext(AuthContext);
@@ -117,13 +117,6 @@ const ClientDashboard = () => {
       // Create order in backend
       const { data: orderData } = await axios.post('/payments/order', { planName: planId });
 
-      if (orderData.isMock) {
-        setSimData(orderData);
-        setShowSimulator(true);
-        setLoadingPlan('');
-        return;
-      }
-
       // Load Razorpay SDK
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded) {
@@ -139,7 +132,7 @@ const ClientDashboard = () => {
         key: orderData.key,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: `${gym_first_name} Noida`,
+        name: `${gym_full_name}`,
         description: `Renewal activation of ${planId.toUpperCase()} membership plan`,
         order_id: orderData.id,
         handler: async (response) => {
@@ -149,7 +142,6 @@ const ClientDashboard = () => {
               razorpayPaymentId: response.razorpay_payment_id,
               razorpaySignature: response.razorpay_signature,
               planName: planId,
-              isMock: false
             };
 
             await axios.post('/payments/verify', verifyPayload);
@@ -192,24 +184,6 @@ const ClientDashboard = () => {
     setLoadingPlan(simData.plan);
     setShowSimulator(false);
 
-    try {
-      const verifyPayload = {
-        razorpayOrderId: simData.id,
-        razorpayPaymentId: `pay_sim_${Math.random().toString(36).substring(2, 10)}`,
-        planName: simData.plan,
-        isMock: true
-      };
-
-      await axios.post('/payments/verify', verifyPayload);
-      await refreshUser();
-      setShowRenewalModal(false);
-      setSuccessMsg('Membership renewed and extended successfully!');
-      fetchDashboardData();
-    } catch (err) {
-      setRenewalError(err.response?.data?.message || 'Verification of simulated payment failed.');
-    } finally {
-      setLoadingPlan('');
-    }
   };
 
   // Remaining days math helper

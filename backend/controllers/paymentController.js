@@ -24,31 +24,7 @@ export const createOrder = async (req, res) => {
   const amountInPaise = selectedPlan.priceInINR * 100;
 
   try {
-    // If Razorpay instance is not initialized, run in mock mode
-    if (!razorpayInstance) {
-      const mockOrderId = `order_mock_${Math.random().toString(36).substring(2, 12)}`;
-      
-      // Save pending payment record
-      const payment = await Payment.create({
-        user: req.user._id,
-        amount: selectedPlan.priceInINR,
-        razorpayOrderId: mockOrderId,
-        status: 'pending',
-        paymentMethod: 'Online Transaction',
-        membershipPlan: planName.toLowerCase()
-      });
-
-      return res.status(201).json({
-        id: mockOrderId,
-        amount: amountInPaise,
-        currency: 'INR',
-        isMock: true,
-        plan: planName.toLowerCase(),
-        key: 'mock_key'
-      });
-    }
-
-    // Real Razorpay integration
+    // Razorpay integration
     const options = {
       amount: amountInPaise,
       currency: 'INR',
@@ -71,7 +47,6 @@ export const createOrder = async (req, res) => {
       id: order.id,
       amount: order.amount,
       currency: order.currency,
-      isMock: false,
       plan: planName.toLowerCase(),
       key: process.env.RAZORPAY_KEY_ID
     });
@@ -86,7 +61,7 @@ export const createOrder = async (req, res) => {
 // @route   POST /api/payments/verify
 // @access  Private
 export const verifyPayment = async (req, res) => {
-  const { razorpayOrderId, razorpayPaymentId, razorpaySignature, planName, isMock } = req.body;
+  const { razorpayOrderId, razorpayPaymentId, razorpaySignature, planName } = req.body;
 
   try {
     const selectedPlan = PLANS[planName.toLowerCase()];
@@ -96,21 +71,15 @@ export const verifyPayment = async (req, res) => {
 
     let verificationSuccess = false;
 
-    if (isMock || !razorpayInstance) {
-      // Mock payment verification success
-      verificationSuccess = true;
-      console.log(`[MOCK PAYMENT SUCCESS] Order: ${razorpayOrderId}, Payment: ${razorpayPaymentId}`);
-    } else {
-      // Real Razorpay payment verification
-      const body = razorpayOrderId + '|' + razorpayPaymentId;
-      const expectedSignature = crypto
-        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-        .update(body.toString())
-        .digest('hex');
+    // Razorpay payment verification
+    const body = razorpayOrderId + '|' + razorpayPaymentId;
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(body.toString())
+      .digest('hex');
 
-      if (expectedSignature === razorpaySignature) {
-        verificationSuccess = true;
-      }
+    if (expectedSignature === razorpaySignature) {
+      verificationSuccess = true;
     }
 
     if (!verificationSuccess) {
@@ -127,7 +96,7 @@ export const verifyPayment = async (req, res) => {
       { razorpayOrderId },
       {
         status: 'paid',
-        razorpayPaymentId: razorpayPaymentId || `pay_mock_${Math.random().toString(36).substring(2, 12)}`,
+        razorpayPaymentId: razorpayPaymentId,
         paidAt: new Date()
       },
       { new: true }

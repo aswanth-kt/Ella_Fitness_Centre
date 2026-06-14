@@ -4,7 +4,6 @@ import {
   loginUser,
   getUserProfile,
   updateUserProfile,
-  forgotPassword,
   sendOTP,
   resetPassword
 } from '../controllers/authController.js';
