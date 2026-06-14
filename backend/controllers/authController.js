@@ -165,33 +165,6 @@ export const updateUserProfile = async (req, res) => {
   }
 };
 
-// @desc    Mock Forgot Password
-// @route   POST /api/auth/forgot-password
-// @access  Public
-export const forgotPassword = async (req, res) => {
-  const { email } = req.body;
-  try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: 'No user registered with this email' });
-    }
-
-    // In a production app, we would send a reset link. For MVP, we log it and mock reset password.
-    const tempPassword = Math.random().toString(36).substring(2, 8).toUpperCase();
-    user.password = tempPassword;
-    await user.save();
-
-    console.log(`[FORGOT PASSWORD MOCK] Reset password code for ${email} is: ${tempPassword}`);
-
-    res.json({
-      message: `Reset code generated! (MOCKED) Your password has been reset to: ${tempPassword}. Please log in and change your password in your profile.`,
-      tempPassword
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
 
 // @desc    Sending OTP to memeber email
 // @route   POST /api/auth/send-otp

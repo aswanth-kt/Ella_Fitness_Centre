@@ -89,5 +89,5 @@ Use these credentials to test both dashboards immediately:
 ---
 
 ## 🧪 Simulated Sandbox Overrides
-- **Razorpay Simulator:** If keys are mock or if Razorpay script fails to load, completing purchases will pop open a custom checkout simulator in the browser. You can select "Simulate Payment Success" or "Simulate Payment Failure".
+- **Razorpay Simulator:** If keys are test or if Razorpay script fails to load, completing purchases will pop open a custom checkout simulator in the browser. You can select "Simulate Payment Success" or "Simulate Payment Failure".
 - **WhatsApp Webhook:** Accessing the WhatsApp Reminders tab in the Admin panel and clicking **Run Manual Expiry Scan** will output SMS logs directly to the node console and database.
