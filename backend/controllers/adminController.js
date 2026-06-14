@@ -4,7 +4,7 @@ import Attendance from '../models/Attendance.js';
 import Notification from '../models/Notification.js';
 import { sendWhatsAppMessage } from '../services/whatsappService.js';
 import { gym_full_name } from '../../frontend/src/constants/constants.js';
-import { invoice_pagination_limit, members_pagination_limit } from '../const/constants.js';
+import { invoice_pagination_limit, members_pagination_limit, reminder_pagination_limit } from '../const/constants.js';
 
 // Helper to normalize dates
 const getStartOfDay = (date) => {
@@ -428,16 +428,23 @@ export const createMember = async (req, res) => {
 // @route   GET /api/admin/reminders/pending
 // @access  Private/Admin
 export const getPendingRemindersList = async (req, res) => {
-  const { search, statusFilter } = req.query; // statusFilter = 'soon' | 'today' | 'expired' | 'all'
+  const { search, statusFilter, reminderPage } = req.query; // statusFilter = 'soon' | 'today' | 'expired' | 'all'
 
   try {
+    const page = Number(reminderPage);
+    const limit = reminder_pagination_limit;
+    const skip = (page - 1) * limit;
+
     const today = getStartOfDay(new Date());
-    const clients = await User.find({ role: 'client', 'membership.plan': { $ne: 'none' } });
+
+    const clients = await User.find({ role: 'client', 'membership.plan': { $ne: 'none' } })
+    .skip(skip)
+    .limit(limit);
 
     const list = [];
 
     for (let client of clients) {
-      if (!client.membership || !client.membership.endDate) continue;
+      if (!client.membership || !client.membership.endDate) continue; // If a client doesn't have a membership or end date, that client is ignored
 
       const endDate = getStartOfDay(client.membership.endDate);
       const timeDiff = endDate.getTime() - today.getTime();
@@ -490,8 +497,16 @@ export const getPendingRemindersList = async (req, res) => {
 
     // Sort by days remaining (ascending, expired/urgent first)
     list.sort((a, b) => a.daysRemaining - b.daysRemaining);
+    
+    const totalRemindingClients = list.length;
+    const totalPage = Math.ceil(totalRemindingClients / limit);
 
-    res.json(list);
+    res.json({
+      list,
+      page,
+      totalPage
+    });
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

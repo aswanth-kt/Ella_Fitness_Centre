@@ -9,7 +9,7 @@ import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend 
 } from 'recharts';
-import { attendence_pagination_limit, gym_first_name, invoice_pagination_limit, members_pagination_limit } from '../constants/constants.js';
+import { attendence_pagination_limit, gym_first_name, invoice_pagination_limit, members_pagination_limit, reminder_pagination_limit } from '../constants/constants.js';
 import Pagination from '../components/Pagination.jsx';
 
 const AdminDashboard = () => {
@@ -82,6 +82,9 @@ const AdminDashboard = () => {
   // Invoice tab
   const [invoicePage, setInvoicePage] = useState(1);
   const [InvoiceTotalPage, setInvoiceTotalPage] = useState(1);
+  // Reminder tab
+  const [reminderPage, setReminderPage] = useState(1);
+  const [reminderTotalPage, setReminderTotalPage] = useState(1);
 
   // Load stats and database entities
   const fetchStats = async () => {
@@ -136,9 +139,17 @@ const AdminDashboard = () => {
   const fetchPendingReminders = async () => {
     try {
       const { data } = await axios.get('/admin/reminders/pending', {
-        params: { search: reminderSearch, statusFilter: reminderStatusFilter }
+        params: { 
+          search: reminderSearch, 
+          statusFilter: reminderStatusFilter, 
+          reminderPage
+        }
       });
-      setPendingReminders(data);
+
+      setPendingReminders(data.list);
+      setReminderPage(data.page);
+      setReminderTotalPage(data.toalPage)
+      
     } catch (err) {
       console.error('Error loading pending reminders list:', err);
     }
@@ -203,7 +214,7 @@ const AdminDashboard = () => {
     if (activeTab === 'reminders') {
       fetchPendingReminders();
     }
-  }, [activeTab, reminderSearch, reminderStatusFilter]);
+  }, [activeTab, reminderSearch, reminderStatusFilter, reminderPage]);
 
   // Mark manual WhatsApp renewal reminder
   const sendManualWhatsApp = async (userId) => {
@@ -1077,6 +1088,17 @@ const AdminDashboard = () => {
                         </tr>
                       ))
                     )}
+
+                    <Pagination
+                      current={reminderPage}
+                      total={reminderTotalPage}
+                      totalItems={pendingReminders.length}
+                      item="reminders"
+                      perPage={reminder_pagination_limit}
+                      onPageChange={(page) => setReminderPage(page)}
+                      colSpan={8}
+                    />
+
                   </tbody>
                 </table>
               </div>
