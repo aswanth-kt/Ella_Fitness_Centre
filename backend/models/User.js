@@ -19,7 +19,9 @@ const userSchema = new mongoose.Schema(
       startDate: { type: Date },
       endDate: { type: Date },
       status: { type: String, enum: ['active', 'expired', 'none'], default: 'none' }
-    }
+    },
+    healthIssues: { type: String },
+    healthDescription: { type: String },
   },
   { timestamps: true }
 );
