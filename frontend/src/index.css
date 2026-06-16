@@ -5,14 +5,25 @@
   --font-sans: 'Outfit', system-ui, -apple-system, sans-serif;
   --font-serif: 'Playfair Display', Georgia, serif;
   
-  --color-gold: #D4AF37;
+  /* --color-gold: #D4AF37;
   --color-gold-hover: #F5C842;
   --color-gold-dark: #aa841e;
   --color-premium-yellow: #F5C842;
   --color-deep-black: #0A0A0A;
   --color-dark-gray: #1A1A1A;
   --color-mid-gray: #2A2A2A;
-  --color-light-gray: #3A3A3A;
+  --color-light-gray: #3A3A3A; */
+
+  --color-gold: #E11D48;
+  --color-gold-hover: #F43F5E;
+  --color-gold-dark: #9F1239;
+
+  --color-premium-yellow: #F8FAFC;
+
+  --color-deep-black: #050505;
+  --color-dark-gray: #111111;
+  --color-mid-gray: #1F1F1F;
+  --color-light-gray: #333333;
   
   --animate-fade-in-up: fade-in-up 0.6s ease-out forwards;
 }
@@ -34,21 +45,21 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #0A0A0A;
+  background: #050505;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #D4AF37;
+  background: #E11D48;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #F5C842;
+  background: #F43F5E;
 }
 
 body {
-  background-color: #0A0A0A;
-  color: #FFFFFF;
+  background-color: #050505;
+  color: #F8FAFC;
   font-family: 'Outfit', sans-serif;
   overflow-x: hidden;
   margin: 0;
@@ -57,31 +68,40 @@ body {
 
 /* Glassmorphism classes */
 .glass {
-  background: rgba(10, 10, 10, 0.75);
+  background:  rgba(5, 5, 5, 0.75);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(212, 175, 55, 0.15);
+  border: 11px solid rgba(225, 29, 72, 0.15);
 }
 
 .glass-premium {
-  background: linear-gradient(135deg, rgba(26, 26, 26, 0.8) 0%, rgba(10, 10, 10, 0.9) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(17, 17, 17, 0.8) 0%,
+    rgba(5, 5, 5, 0.9) 100%
+  );
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(212, 175, 55, 0.25);
+  border: 1px solid rgba(225, 29, 72, 0.25);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
 }
 
 /* Custom text gradient */
 .text-gold-gradient {
-  background: linear-gradient(to right, #F5C842 0%, #D4AF37 50%, #B8860B 100%);
+  background: linear-gradient(
+    to right,
+    #F43F5E 0%,
+    #E11D48 50%,
+    #9F1239 100%
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 /* Hover effects */
 .hover-gold-shadow:hover {
-  box-shadow: 0 0 15px rgba(212, 175, 55, 0.35);
-  border-color: rgba(212, 175, 55, 0.5);
+  box-shadow: 0 0 15px rgba(225, 29, 72, 0.35);
+  border-color: rgba(225, 29, 72, 0.5);
 }
 
 /* Reset root container width */

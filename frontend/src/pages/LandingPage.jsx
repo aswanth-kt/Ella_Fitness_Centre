@@ -7,7 +7,8 @@ import {
   ChevronRight, Play, CheckCircle2, Award, Zap, Shield, Users, Heart, Star, 
   MapPin, Phone, Mail, MessageSquare, Flame, Trophy, ShieldAlert 
 } from 'lucide-react';
-import { gym_first_name } from '../constants/constants';
+import banner from '../assets/banner/bannerImage.png'
+import { address, email, google_map_location, gym_first_name, gym_full_name, phone_number, whatsapp_number } from '../constants/constants';
 
 const LandingPage = () => {
   const { user } = useContext(AuthContext);
@@ -56,14 +57,14 @@ const LandingPage = () => {
   ];
 
   return (
-    <div className="bg-deep-black min-h-screen">
+    <div className="bg-deep-black min-h-screen mt-10">
       {/* 1. Hero Section */}
       <section id="hero" className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
         {/* Background Image with Black Gradient Overlay */}
         <div 
           className="absolute inset-0 bg-cover bg-center"
           style={{ 
-            backgroundImage: "url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop')",
+            backgroundImage: `url(${banner})`,
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-r from-deep-black via-deep-black/80 to-transparent"></div>
@@ -80,7 +81,7 @@ const LandingPage = () => {
               className="inline-flex items-center space-x-2 bg-gold/10 border border-gold/30 px-3 py-1 rounded-full text-gold text-xs font-semibold tracking-wider uppercase mb-6"
             >
               <Flame className="h-4 w-4" />
-              <span>THE GOLD STANDARD OF FITNESS</span>
+              <span>DISCIPLINE · DEDICATION · DOMINANCE</span>
             </motion.div>
 
             <motion.h1 
@@ -89,8 +90,8 @@ const LandingPage = () => {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="font-serif text-5xl md:text-7xl font-extrabold tracking-tight text-white leading-tight"
             >
-              UNLEASH YOUR <br />
-              <span className="text-gold-gradient">ULTIMATE POWER</span>
+              WHERE DISCIPLINE <br />
+              <span className="text-gold-gradient">MEETS DOMINANCE</span>
             </motion.h1>
 
             <motion.p 
@@ -99,7 +100,7 @@ const LandingPage = () => {
               transition={{ duration: 0.8, delay: 0.4 }}
               className="mt-6 text-lg md:text-xl text-gray-300 font-light leading-relaxed"
             >
-              Step into Noida's premier luxury training arena. Sculpt your physique under certified master coaches and experience state-of-the-art sports science.
+              Step into D'Core Fitness Zone, Noida's home for relentless training. Our certified master coaches and sports-science-backed programs are built to forge raw strength, sharpen every muscle, and turn discipline into a way of life.
             </motion.p>
 
             <motion.div 
@@ -112,7 +113,7 @@ const LandingPage = () => {
                 onClick={handleJoinClick}
                 className="bg-gradient-to-r from-premium-yellow to-gold text-deep-black font-bold text-center py-4 px-8 rounded-full shadow-lg shadow-gold/35 hover:scale-105 transition-transform duration-300 flex items-center justify-center space-x-2"
               >
-                <span>JOIN TODAY</span>
+                <span>START YOUR TRANSFORMATION</span>
                 <ChevronRight className="h-5 w-5" />
               </button>
               
@@ -120,7 +121,7 @@ const LandingPage = () => {
                 href="#plans"
                 className="glass border border-gold/30 text-white font-semibold text-center py-4 px-8 rounded-full hover:bg-gold/10 hover-gold-shadow transition-all duration-300 flex items-center justify-center space-x-2"
               >
-                <span>VIEW PLANS</span>
+                <span>EXPLORE MEMBERSHIPS</span>
               </a>
             </motion.div>
           </div>
@@ -478,7 +479,7 @@ const LandingPage = () => {
                   <div>
                     <h4 className="text-white font-bold text-sm">Location Address</h4>
                     <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                      108 Olympus Towers, Golden Avenue, Sector 62, Noida, UP - 201301
+                      {address}
                     </p>
                   </div>
                 </div>
@@ -489,7 +490,7 @@ const LandingPage = () => {
                   </div>
                   <div>
                     <h4 className="text-white font-bold text-sm">Call Support</h4>
-                    <p className="text-xs text-gray-400 mt-1">+91 98765 43210</p>
+                    <p className="text-xs text-gray-400 mt-1">{phone_number}</p>
                   </div>
                 </div>
 
@@ -499,7 +500,7 @@ const LandingPage = () => {
                   </div>
                   <div>
                     <h4 className="text-white font-bold text-sm">WhatsApp Reminders & Chat</h4>
-                    <p className="text-xs text-gray-400 mt-1">+91 98765 43211</p>
+                    <p className="text-xs text-gray-400 mt-1">{whatsapp_number}</p>
                   </div>
                 </div>
 
@@ -509,13 +510,13 @@ const LandingPage = () => {
                   </div>
                   <div>
                     <h4 className="text-white font-bold text-sm">Email Inbox</h4>
-                    <p className="text-xs text-gray-400 mt-1">membership@olympusgym.com</p>
+                    <p className="text-xs text-gray-400 mt-1">{email}</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Google Map Mock/Embed Representation */}
+            {/* Google Map Embed Representation */}
             <div className="space-y-4">
               <span className="text-gray-400 font-semibold text-xs tracking-wider uppercase block">FACILITY LOCATION</span>
               <div className="relative border border-gold/20 rounded-2xl overflow-hidden shadow-2xl h-[380px] bg-dark-gray/30 flex items-center justify-center">
@@ -526,12 +527,12 @@ const LandingPage = () => {
                   <div className="inline-flex bg-gold/20 p-3 rounded-full text-gold mb-2 animate-bounce">
                     <MapPin className="h-8 w-8" />
                   </div>
-                  <h3 className="text-white font-bold text-xl">Olympus Arena Noida</h3>
+                  <h3 className="text-white font-bold text-xl">{gym_full_name}, Adoor</h3>
                   <p className="text-xs text-gray-300 max-w-sm mx-auto leading-relaxed">
-                    Centrally located in Noida Sector 62. Easily accessible via Metro and main highways.
+                    Centrally located in {address}
                   </p>
                   <a 
-                    href="https://maps.google.com" 
+                    href={google_map_location} 
                     target="_blank" 
                     rel="noreferrer"
                     className="inline-block bg-gold hover:bg-gold-hover text-deep-black font-bold text-xs px-6 py-3 rounded-full shadow-lg transition-all"
