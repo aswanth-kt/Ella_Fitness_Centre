@@ -1,8 +1,9 @@
-import React, { useState, useContext, useEffect } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Dumbbell, User as UserIcon, Mail, Phone, Lock, Calendar, MapPin, Heart, Shield, Loader, AlertCircle } from 'lucide-react';
+import { Dumbbell, User as UserIcon, Mail, Phone, Lock, Calendar, MapPin, Heart, Shield, Loader, AlertCircle, ChevronDown } from 'lucide-react';
 import { gym_first_name, gym_second_name } from '../constants/constants';
+import { healthIssuesList } from '../constants/healthIssues';
 
 const RegisterPage = () => {
   const { user, register } = useContext(AuthContext);
@@ -17,11 +18,14 @@ const RegisterPage = () => {
     password: '',
     role: 'client', // 'client' or 'admin'
     height: '',
-    weight: ''
+    weight: '',
+    healthIssues: '',
+    healthDescription: '',
   });
-  
+  const [hasHealthIssue, setHasHealthIssue] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
 
   // Redirect if logged in
@@ -45,17 +49,27 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { name, email, mobile, password, age } = formData;
+    const { name, email, mobile, password, age, healthIssues, healthDescription } = formData;
     
     if (!name || !email || !mobile || !password || !age) {
       setError('Please fill out all required fields');
       return;
-    }
+    };
     
+    if (hasHealthIssue && !healthIssues) {
+      setError('Please select a health issue')
+      return;
+    };
+
+    if (hasHealthIssue && healthIssues === 'other' && !healthDescription) {
+      setError("Please fill out health description")
+      return;
+    };
+
     if (password.length < 6) {
       setError('Password must be at least 6 characters long');
       return;
-    }
+    };
 
     setError('');
     setLoading(true);
@@ -280,8 +294,80 @@ const RegisterPage = () => {
                 </div>
               </div>
 
-              {/* Testing Role - Developer Toggle */}
+              {/* Health Issue */}
               <div>
+                <label className='block text-xs font-bold tracking-wider text-gray-400 uppercase mb-2'>
+                  Any Helth Issues?
+                </label>
+
+                {/* Has health issues */}
+                <div className='flex space-x-3'>
+                  <button
+                    type='button'
+                    onClick={() => setHasHealthIssue(true)}
+                    className={`flex-1 py-3 rounded-xl border text-sm font-semibold transition-colors ${
+                      hasHealthIssue
+                      ? 'bg-gold/20 border-gold text-gold'
+                      : 'bg-black/40 border-gold/15 text-gray-400'
+                    }`}
+                  >
+                    Yes
+                  </button>
+                  <button
+                    type='button'
+                    onClick={() => {
+                      setHasHealthIssue(false)
+                      setFormData(prev => ({
+                        ...prev,
+                        healthIssues: '',
+                        healthDescription: ''
+                      }))
+                    }}
+                    className={`flex-1 py-3 rounded-xl border text-sm font-semibold transition-colors ${
+                      !hasHealthIssue
+                      ? 'bg-gold/20 border-gold text-gold'
+                      : 'bg-black/40 border-gold/15 text-gray-400'
+                    }`}
+                  >
+                    No
+                  </button>
+                </div>
+
+                {/* Dropdown dhown only if Yes */}
+                {hasHealthIssue && (
+                  <select
+                    name='healthIssues'
+                    value={formData.healthIssues}
+                    onChange={handleChange}
+                    className='block w-full mt-3 px-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white focus:outline-none focus:border-gold transition-colors text-sm'
+                  >
+                    <option value="" className='bg-deep-black'>Select an issue</option>
+                    {healthIssuesList.map(({ value, label}) => (
+                      <option key={value} value={value} className='bg-deep-black'>{label}</option>
+                    ))}
+                  </select>
+                )}
+
+                {/* Description box - shown only if "Other" is selected */}
+                {hasHealthIssue && formData.healthIssues === 'other' && (
+                  <div className='mt-3'>
+                    <label className="block text-xs font-bold tracking-wider text-gray-400 uppercase mb-2">
+                      Please describe your health issue
+                    </label>
+                    <textarea
+                      name="healthDescription"
+                      rows="3"
+                      value={formData.healthDescription}
+                      onChange={handleChange}
+                      className='block w-full px-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-colors text-sm'
+                      placeholder="Describe your specific health condition or concern..."
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Testing Role - Developer Toggle */}
+              {/* <div>
                 <label className="block text-xs font-bold tracking-wider text-gold uppercase mb-2 flex items-center space-x-1">
                   <Shield className="h-3.5 w-3.5" />
                   <span>Account Type (Testing Override)</span>
@@ -295,7 +381,7 @@ const RegisterPage = () => {
                   <option value="client" className="bg-deep-black text-white">Client (Regular Member)</option>
                   <option value="admin" className="bg-deep-black text-gold">Admin (Gym Manager)</option>
                 </select>
-              </div>
+              </div> */}
             </div>
 
             {/* Address */}
