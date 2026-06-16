@@ -37,7 +37,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 w-full z-50 glass border-b border-gold/10">
+    <nav className="fixed top-0 left-0 w-full z-50 backdrop-blur-2xl backdrop-saturate-150 bg-deep-black/40 border-b border-gold/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_8px_32px_-8px_rgba(0,0,0,0.45)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
@@ -130,7 +130,7 @@ const Navbar = () => {
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden glass border-t border-gold/10 animate-fade-in-up">
+        <div className="md:hidden backdrop-blur-2xl backdrop-saturate-150 bg-deep-black/50 border-t border-gold/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] animate-fade-in-up">
           <div className="px-2 pt-2 pb-4 space-y-1 sm:px-3 text-center">
             {!user || user.role === 'client' ? (
               <>

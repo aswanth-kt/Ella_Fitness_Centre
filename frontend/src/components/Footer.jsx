@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Dumbbell, Phone, Mail, MapPin, MessageSquare } from 'lucide-react';
-import { gym_first_name, gym_full_name } from '../constants/constants';
+import { address, email, gym_first_name, gym_full_name, phone_number, whatsapp_number } from '../constants/constants';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -75,20 +75,20 @@ const Footer = () => {
               <li className="flex items-start space-x-3">
                 <MapPin className="h-5 w-5 text-gold shrink-0" />
                 <span className="text-sm">
-                  108 {gym_full_name} Towers, Golden Avenue, Sector 62, Noida, UP - 201301
+                  {address}
                 </span>
               </li>
               <li className="flex items-center space-x-3">
                 <Phone className="h-5 w-5 text-gold" />
-                <span className="text-sm">+91 98765 43210</span>
+                <span className="text-sm">{phone_number}</span>
               </li>
               <li className="flex items-center space-x-3">
                 <MessageSquare className="h-5 w-5 text-gold" />
-                <span className="text-sm">+91 98765 43211 (WhatsApp)</span>
+                <span className="text-sm">{whatsapp_number} (WhatsApp)</span>
               </li>
               <li className="flex items-center space-x-3">
                 <Mail className="h-5 w-5 text-gold" />
-                <span className="text-sm">membership@olympusgym.com</span>
+                <span className="text-sm">{email}</span>
               </li>
             </ul>
           </div>
