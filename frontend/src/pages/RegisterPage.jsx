@@ -85,7 +85,7 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-deep-black flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-screen bg-deep-black flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8 mt-8 relative overflow-hidden">
       {/* Background gradients */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gold/5 rounded-full blur-3xl"></div>
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-premium-yellow/5 rounded-full blur-3xl"></div>
@@ -93,14 +93,14 @@ const RegisterPage = () => {
       <div className="max-w-xl w-full z-10">
         {/* Branding header */}
         <div className="text-center mb-6">
-          <Link to="/" className="inline-flex items-center space-x-2 mb-4">
+          {/* <Link to="/" className="inline-flex items-center space-x-2 mb-4">
             <div className="bg-gradient-to-br from-premium-yellow to-gold p-2 rounded-lg text-deep-black">
               <Dumbbell className="h-6 w-6" />
             </div>
             <span className="font-serif text-2xl font-bold tracking-wider text-gold-gradient">
               {gym_first_name}<span className="text-white font-sans text-sm font-normal tracking-widest ml-1 uppercase">{gym_second_name}</span>
             </span>
-          </Link>
+          </Link> */}
           
           <h2 className="text-3xl font-extrabold text-white">
             Create Your Account

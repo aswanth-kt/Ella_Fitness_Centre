@@ -142,14 +142,14 @@ const [forgotLoading, setForgotLoading] = useState(false);
       <div className="max-w-md w-full z-10">
         {/* Branding header */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center space-x-2 mb-4">
+          {/* <Link to="/" className="inline-flex items-center space-x-2 mb-4">
             <div className="bg-gradient-to-br from-premium-yellow to-gold p-2 rounded-lg text-deep-black">
               <Dumbbell className="h-6 w-6" />
             </div>
             <span className="font-serif text-2xl font-bold tracking-wider text-gold-gradient">
               {gym_first_name}<span className="text-white font-sans text-sm font-normal tracking-widest ml-1 uppercase">{gym_second_name}</span>
             </span>
-          </Link>
+          </Link> */}
           
           <h2 className="text-3xl font-extrabold text-white">
             {forgotMode ? 'Recover Password' : 'Welcome Back'}

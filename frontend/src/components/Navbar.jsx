@@ -1,8 +1,9 @@
-import React, { useState, useContext } from 'react';
+import { useState, useContext } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Menu, X, Dumbbell, User as UserIcon, LogOut, Shield } from 'lucide-react';
+import { Menu, X, LogOut, Shield } from 'lucide-react';
 import { gym_first_name, gym_second_name } from '../constants/constants';
+import logo from '../assets/logo/logo.png';
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
@@ -42,8 +43,8 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 group">
-            <div className="bg-gradient-to-br from-premium-yellow to-gold p-2 rounded-lg text-deep-black group-hover:scale-110 transition-transform duration-300">
-              <Dumbbell className="h-6 w-6" />
+            <div className="p-2 rounded-lg group-hover:scale-110 transition-transform duration-300">
+              <img src={logo} alt="logo" className='h-9 w-12' />
             </div>
             <span className="font-serif text-2xl font-bold tracking-wider text-gold-gradient group-hover:opacity-95 transition-opacity">
               {gym_first_name}<span className="text-white font-sans text-sm font-normal tracking-widest ml-1 uppercase">{gym_second_name}</span>
