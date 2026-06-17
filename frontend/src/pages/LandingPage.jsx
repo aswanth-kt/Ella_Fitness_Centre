@@ -100,7 +100,8 @@ const LandingPage = () => {
               transition={{ duration: 0.8, delay: 0.4 }}
               className="mt-6 text-lg md:text-xl text-gray-300 font-light leading-relaxed"
             >
-              Step into D'Core Fitness Zone, Noida's home for relentless training. Our certified master coaches and sports-science-backed programs are built to forge raw strength, sharpen every muscle, and turn discipline into a way of life.
+              Transform your body, strengthen your mind, and unlock your full potential at {gym_full_name}. Expert guidance, proven training methods, and a motivating environment to help you achieve lasting results.
+
             </motion.p>
 
             <motion.div 
