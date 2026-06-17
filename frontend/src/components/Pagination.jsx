@@ -28,7 +28,7 @@ export default function Pagination({
           {/* Result count */}
           <p className="text-xs text-gray-500 shrink-0">
             Showing{" "}
-            <span className="text-[#D4AF37] font-medium">{from}–{to}</span>{" "}
+            <span className="text-[var(--color-gold)] font-medium">{from}–{to}</span>{" "}
             of <span className="text-gray-400">{totalItems}</span> {item}
           </p>
 
@@ -38,7 +38,7 @@ export default function Pagination({
             <button
               onClick={() => onPageChange(current - 1)}
               disabled={current === 1}
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/10 text-gray-500 text-sm bg-transparent transition-all disabled:opacity-25 disabled:cursor-not-allowed hover:border-[#D4AF37] hover:text-[#D4AF37] cursor-pointer"
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/10 text-gray-500 text-sm bg-transparent transition-all disabled:opacity-25 disabled:cursor-not-allowed hover:border-[var(--color-gold)] hover:text-[var(--color-gold)] cursor-pointer"
             >
               ‹
             </button>
@@ -54,8 +54,8 @@ export default function Pagination({
                   onClick={() => onPageChange(p)}
                   className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-all cursor-pointer
                     ${p === current
-                      ? "bg-[#D4AF37] border border-[#D4AF37] text-[#0A0A0A] font-semibold"
-                      : "bg-transparent border border-white/10 text-gray-400 hover:border-[#D4AF37] hover:text-[#D4AF37]"
+                      ? "bg-[var(--color-gold)] border border-[var(--color-gold)] text-[var(--color-deep-black)] font-semibold"
+                      : "bg-transparent border border-white/10 text-gray-400 hover:border-[var(--color-gold)] hover:text-[var(--color-gold)]"
                     }`}
                 >
                   {p}
@@ -66,7 +66,7 @@ export default function Pagination({
             <button
               onClick={() => onPageChange(current + 1)}
               disabled={current === total}
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/10 text-gray-500 text-sm bg-transparent transition-all disabled:opacity-25 disabled:cursor-not-allowed hover:border-[#D4AF37] hover:text-[#D4AF37] cursor-pointer"
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/10 text-gray-500 text-sm bg-transparent transition-all disabled:opacity-25 disabled:cursor-not-allowed hover:border-[var(--color-gold)] hover:text-[var(--color-gold)] cursor-pointer"
             >
               ›
             </button>

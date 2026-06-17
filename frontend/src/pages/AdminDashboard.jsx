@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Shield, Users, CheckCircle, CheckCircle2, AlertTriangle, Calendar, 
-  IndianRupee, Search, SlidersHorizontal, Edit3, Trash2, Loader, 
-  RefreshCw, Send, Eye, FileText, AlertCircle, Plus, CreditCard 
+  IndianRupee, Search, Edit3, Trash2, Loader, 
+  RefreshCw, AlertCircle, Plus, CreditCard 
 } from 'lucide-react';
 import axios from '../api/axios.js';
 import { 
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, 
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend 
+  XAxis, YAxis, CartesianGrid, Tooltip 
 } from 'recharts';
 import { attendence_pagination_limit, gym_first_name, invoice_pagination_limit, members_pagination_limit, reminder_pagination_limit } from '../constants/constants.js';
 import Pagination from '../components/Pagination.jsx';
@@ -70,7 +70,7 @@ const AdminDashboard = () => {
   });
 
   // Recharts colors
-  const GOLD_COLORS = ['#F5C842', '#D4AF37', '#aa841e', '#3A3A3A'];
+  const GOLD_COLORS = ['var(--color-gold-hover)', 'var(--color-gold)', 'var(--color-gold-dark)', 'var(--color-light-gray)'];
 
   // Paginations states
   // Memeber tasb
@@ -534,15 +534,15 @@ const AdminDashboard = () => {
                     <AreaChart data={stats.charts.revenueData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.6}/>
-                          <stop offset="95%" stopColor="#D4AF37" stopOpacity={0}/>
+                          <stop offset="5%" stopColor="var(--color-gold)" stopOpacity={0.6}/>
+                          <stop offset="95%" stopColor="var(--color-gold)" stopOpacity={0}/>
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                       <XAxis dataKey="month" stroke="#A3A3A3" fontSize={11} />
                       <YAxis stroke="#A3A3A3" fontSize={11} />
                       <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', borderColor: '#D4AF37', borderRadius: '12px' }} />
-                      <Area type="monotone" dataKey="revenue" stroke="#D4AF37" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" name="Revenue (₹)" />
+                      <Area type="monotone" dataKey="revenue" stroke="var(--color-gold)" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" name="Revenue (₹)" />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -599,7 +599,7 @@ const AdminDashboard = () => {
                       <XAxis dataKey="day" stroke="#A3A3A3" fontSize={11} />
                       <YAxis stroke="#A3A3A3" fontSize={11} allowDecimals={false} />
                       <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', borderColor: '#D4AF37', borderRadius: '12px' }} />
-                      <Bar dataKey="present" fill="#F5C842" radius={[4, 4, 0, 0]} name="Check-ins" barSize={35} />
+                      <Bar dataKey="present" fill="var(--color-gold-hover)" radius={[4, 4, 0, 0]} name="Check-ins" barSize={35} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
