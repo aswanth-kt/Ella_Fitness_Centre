@@ -178,10 +178,10 @@ const LandingPage = () => {
                 WE MOLD CHAMPIONS & <span className="text-gold-gradient">REDEFINE LIMITS</span>
               </h2>
               <p className="text-gray-300 leading-relaxed font-light">
-                Olympus Gym was born from a desire to create a world-class training center that doesn't just house gym equipment, but cultivates a relentless pursuit of self-betterment. 
+                {gym_full_name} was built for people who want to feel stronger, healthier, and more confident in their everyday lives. We believe fitness is not just about lifting weights or changing your appearance—it's about building better habits, improving your well-being, and becoming the best version of yourself.
               </p>
               <p className="text-gray-400 leading-relaxed font-light">
-                Our vision is to offer the ultimate environment where luxury meets performance. With fully customized training routines, state of the art biomechanics, and a vibrant community of driven individuals, we help you conquer your physical and mental milestones.
+                At {gym_first_name}, you'll find a motivating atmosphere, experienced trainers, and the support you need to stay consistent. Whether you're taking your first step into fitness or pushing toward new goals, we're here to help you enjoy the journey and achieve lasting results.
               </p>
               
               <div className="grid grid-cols-2 gap-6 pt-4">

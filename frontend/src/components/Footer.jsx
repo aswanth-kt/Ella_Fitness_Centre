@@ -1,7 +1,7 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
-import { Dumbbell, Phone, Mail, MapPin, MessageSquare } from 'lucide-react';
+import { Phone, Mail, MapPin, MessageSquare } from 'lucide-react';
 import { address, email, gym_first_name, gym_full_name, instagram_link, phone_number, whatsapp_number } from '../constants/constants';
+import logo from '../assets/logo/logo.png';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -17,8 +17,8 @@ const Footer = () => {
           {/* Logo & Slogan */}
           <div className="space-y-4">
             <Link to="/" onClick={handleScrollToTop} className="flex items-center space-x-2">
-              <div className="bg-gradient-to-br from-premium-yellow to-gold p-2 rounded-lg text-deep-black">
-                <Dumbbell className="h-6 w-6" />
+              <div className="p-2 rounded-lg text-deep-black">
+                <img src={logo} alt="logo" className='h-12 w-16' />
               </div>
               <span className="font-serif text-2xl font-bold tracking-wider text-gold-gradient">
                 {gym_first_name}<span className="text-white font-sans text-sm font-normal tracking-widest ml-1 uppercase">{gym_full_name}</span>
