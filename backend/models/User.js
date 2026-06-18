@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema(
     height: { type: Number },
     weight: { type: Number },
     membership: {
-      plan: { type: String, enum: ['starter', 'standard', 'premium', 'none'], default: 'none' },
+      plan: { type: String, enum: ['1month', '3month', '6month', '1year', 'student', 'none'], default: 'none' },
       startDate: { type: Date },
       endDate: { type: Date },
       status: { type: String, enum: ['active', 'expired', 'none'], default: 'none' }

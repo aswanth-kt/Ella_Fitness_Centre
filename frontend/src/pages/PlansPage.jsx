@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { Dumbbell, CheckCircle2, Loader, CreditCard, ShieldCheck, AlertCircle } from 'lucide-react';
 import axios from '../api/axios.js';
+import { membershipPlans } from '../constants/membershipPlans.js';
+import { gym_full_name } from '../constants/constants.js';
+import gymImage from '../assets/banner/bannerImage.png';
 
 const PlansPage = () => {
   const { user, refreshUser } = useContext(AuthContext);
@@ -10,7 +13,6 @@ const PlansPage = () => {
   const [error, setError] = useState('');
   
   // Simulator modal states
-  const [showSimulator, setShowSimulator] = useState(false);
   const [simData, setSimData] = useState(null);
 
   const navigate = useNavigate();
@@ -45,33 +47,17 @@ const PlansPage = () => {
       // Create order in backend
       const { data: orderData } = await axios.post('/payments/order', { planName: planId });
 
-      if (orderData.isMock) {
-        // Trigger Simulator Modal
-        setSimData(orderData);
-        setShowSimulator(true);
-        setLoadingPlan('');
-        return;
-      }
-
       // Load SDK
-      const scriptLoaded = await loadRazorpayScript();
-      if (!scriptLoaded) {
-        // Fallback to simulator if script cannot load (ad blockers etc)
-        console.log('Razorpay Script failed to load. Falling back to sandbox simulator.');
-        setSimData(orderData);
-        setShowSimulator(true);
-        setLoadingPlan('');
-        return;
-      }
+      await loadRazorpayScript();
 
       // Real checkout
       const options = {
         key: orderData.key,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: 'Olympus Gym Noida',
+        name: {gym_full_name},
         description: `Activation of ${planId.toUpperCase()} membership plan`,
-        image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=150',
+        image: {gymImage},
         order_id: orderData.id,
         handler: async (response) => {
           try {
@@ -80,12 +66,15 @@ const PlansPage = () => {
               razorpayPaymentId: response.razorpay_payment_id,
               razorpaySignature: response.razorpay_signature,
               planName: planId,
-              isMock: false
             };
 
             const { data } = await axios.post('/payments/verify', verifyPayload);
+            // console.log("verifyPayload data:", data);
+
             await refreshUser();
-            navigate('/dashboard', { state: { paymentSuccess: true } });
+            if (data.payment.status === 'paid') {
+              navigate('/dashboard', { state: { paymentSuccess: true } });
+            }
           } catch (err) {
             setError(err.response?.data?.message || 'Payment verification failed. Please contact support.');
           }
@@ -111,34 +100,6 @@ const PlansPage = () => {
     }
   };
 
-  const executeSimulatedPayment = async (status) => {
-    if (status === 'fail') {
-      setShowSimulator(false);
-      setError('Payment cancelled/failed by simulated user.');
-      return;
-    }
-
-    setLoadingPlan(simData.plan);
-    setShowSimulator(false);
-
-    try {
-      const verifyPayload = {
-        razorpayOrderId: simData.id,
-        razorpayPaymentId: `pay_sim_${Math.random().toString(36).substring(2, 10)}`,
-        planName: simData.plan,
-        isMock: true
-      };
-
-      const { data } = await axios.post('/payments/verify', verifyPayload);
-      await refreshUser();
-      navigate('/dashboard', { state: { paymentSuccess: true } });
-    } catch (err) {
-      setError(err.response?.data?.message || 'Verification of simulated payment failed.');
-    } finally {
-      setLoadingPlan('');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-deep-black pt-32 pb-24 relative overflow-hidden">
       {/* Background gradients */}
@@ -146,7 +107,7 @@ const PlansPage = () => {
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-premium-yellow/5 rounded-full blur-3xl"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
+
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
           <span className="text-gold font-bold tracking-widest text-sm uppercase">MEMBERSHIPS</span>
@@ -166,14 +127,14 @@ const PlansPage = () => {
         )}
 
         {/* Plan Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch max-w-6xl mx-auto">
-          {plans.map((p) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 items-stretch">
+          {membershipPlans.map((p) => {
             const isActivePlan = user?.membership?.plan === p.id && user?.membership?.status === 'active';
 
             return (
               <div
                 key={p.id}
-                className={`relative rounded-2xl flex flex-col justify-between overflow-hidden p-8 ${
+                className={`relative rounded-2xl flex flex-col justify-between overflow-hidden p-6 lg:p-7 ${
                   isActivePlan 
                     ? 'border-2 border-emerald-500 bg-emerald-950/15 shadow-xl'
                     : p.isPopular 
@@ -181,26 +142,50 @@ const PlansPage = () => {
                       : 'border border-gold/15 bg-dark-gray/30 hover:border-gold/30 hover-gold-shadow'
                 } transition-all duration-300`}
               >
-                {isActivePlan && (
+                {isActivePlan ? (
                   <div className="absolute top-0 right-0 bg-emerald-500 text-deep-black font-extrabold text-[10px] tracking-wider uppercase px-4 py-1.5 rounded-bl-xl">
                     CURRENTLY ACTIVE
                   </div>
-                )}
-                {!isActivePlan && p.isPopular && (
+                ) : p.isPopular ? (
                   <div className="absolute top-0 right-0 bg-gradient-to-l from-premium-yellow to-gold text-deep-black font-extrabold text-[10px] tracking-wider uppercase px-4 py-1.5 rounded-bl-xl">
                     POPULAR CHOICE
                   </div>
-                )}
+                ) : p.badge ? (
+                  <div className="absolute top-0 right-0 border border-gold/60 text-gold bg-deep-black/90 font-extrabold text-[10px] tracking-wider uppercase px-4 py-1.5 rounded-bl-xl">
+                    {p.badge}
+                  </div>
+                ) : null}
 
                 <div>
                   <span className="text-gray-400 text-sm tracking-wider font-semibold uppercase">{p.name}</span>
-                  <div className="flex items-baseline mt-4 mb-2">
-                    <span className="text-white text-3xl font-extrabold">₹</span>
-                    <span className="text-white text-5xl font-extrabold tracking-tight">{p.price}</span>
+
+                  <div className="flex items-baseline mt-4 mb-1 gap-2 flex-wrap">
+                    <div className="flex items-baseline">
+                      <span className="text-white text-3xl font-extrabold">₹</span>
+                      <span className="text-white text-5xl font-extrabold tracking-tight">{p.price}</span>
+                      {p.priceSuffix && (
+                        <span className="text-gray-400 text-sm font-semibold ml-1">{p.priceSuffix}</span>
+                      )}
+                    </div>
+                    {p.originalPrice && (
+                      <span className="text-gray-500 text-lg line-through font-medium">₹{p.originalPrice}</span>
+                    )}
                   </div>
-                  <span className="text-gold text-sm font-semibold tracking-wide uppercase block mb-6">{p.duration} Duration</span>
-                  
-                  <div className="border-t border-gold/10 pt-6 mt-2">
+
+                  <span className="text-gold text-sm font-semibold tracking-wide uppercase block mb-1">
+                    {p.duration}
+                  </span>
+
+                  {p.admissionFee && (
+                    <span className="text-gray-400 text-xs font-medium tracking-wide block">
+                      {p.admissionFee}
+                    </span>
+                  )}
+                  {p.note && (
+                    <span className="text-gray-500 text-xs italic block mt-1">{p.note}</span>
+                  )}
+
+                  <div className="border-t border-gold/10 pt-6 mt-5">
                     <ul className="space-y-4">
                       {p.benefits.map((b, bIdx) => (
                         <li key={bIdx} className="flex items-start space-x-3 text-sm text-gray-300">
@@ -243,59 +228,6 @@ const PlansPage = () => {
           })}
         </div>
       </div>
-
-      {/* Simulator Modal */}
-      {showSimulator && simData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-          <div className="glass-premium border-gold/30 rounded-3xl max-w-md w-full p-8 space-y-6 text-center animate-fade-in-up">
-            <div className="mx-auto bg-gold/10 text-gold w-fit p-4 rounded-full">
-              <CreditCard className="h-10 w-10" />
-            </div>
-            
-            <div>
-              <h3 className="text-2xl font-bold text-white">Razorpay Sandbox</h3>
-              <p className="text-sm text-gray-400 mt-2">
-                Simulating payments checkout for {simData.plan.toUpperCase()} Membership.
-              </p>
-            </div>
-
-            <div className="bg-black/50 border border-gold/15 p-4 rounded-xl text-left space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Order ID:</span>
-                <span className="text-white font-mono">{simData.id}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Amount:</span>
-                <span className="text-gold font-bold">₹{simData.amount / 100} INR</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-400">User Prefill:</span>
-                <span className="text-white">{user?.name}</span>
-              </div>
-            </div>
-
-            <div className="bg-gold/5 border border-gold/15 rounded-xl p-3 text-xs text-gray-300 text-left flex items-start space-x-2">
-              <ShieldCheck className="h-4 w-4 text-gold shrink-0 mt-0.5" />
-              <span>We detected mock key modes. Complete testing checkout by selecting a state below.</span>
-            </div>
-
-            <div className="flex flex-col space-y-3 pt-2">
-              <button
-                onClick={() => executeSimulatedPayment('success')}
-                className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-xs tracking-wider rounded-xl hover:scale-[1.02] transition-transform cursor-pointer"
-              >
-                SIMULATE PAYMENT SUCCESS
-              </button>
-              <button
-                onClick={() => executeSimulatedPayment('fail')}
-                className="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs tracking-wider rounded-xl transition-colors cursor-pointer"
-              >
-                SIMULATE PAYMENT FAILURE
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

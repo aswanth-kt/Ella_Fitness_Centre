@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import banner from '../assets/banner/bannerImage.png'
 import { address, email, google_map_location, gym_first_name, gym_full_name, phone_number, whatsapp_number } from '../constants/constants';
+import { membershipPlans } from '../constants/membershipPlans';
 
 const LandingPage = () => {
   const { user } = useContext(AuthContext);
@@ -32,12 +33,6 @@ const LandingPage = () => {
     { title: 'Functional Training', desc: 'Sled tracks, kettlebells, battle ropes, and specialized crossfit cages.', icon: Zap },
     { title: 'Locker Facility', desc: 'Keyless electronic lockers, luxury steam showers, and vanity counters.', icon: Shield },
     { title: 'Personal Training', desc: 'One-on-one sessions with certified elite transformation coaches.', icon: Users }
-  ];
-
-  const plans = [
-    { name: 'Starter Plan', duration: '1 Month', price: '1,500', isPopular: false, benefits: ['Full gym access during hours', 'Locker & steam room access', '1 Complementary physical assessment', 'Standard workout tracking'] },
-    { name: 'Standard Plan', duration: '3 Months', price: '4,000', isPopular: true, benefits: ['All Starter plan perks', '2 Personal training guidance sessions', 'Custom nutrition guidance manual', 'Body composition tracking'] },
-    { name: 'Premium Plan', duration: '6 Months', price: '7,000', isPopular: false, benefits: ['All Standard plan perks', 'Priority personal training booking', 'Weekly nutrition audits', 'Access to VIP recovery lounge'] }
   ];
 
   const trainers = [
@@ -247,34 +242,60 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-            {plans.map((p, idx) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 items-stretch">
+            {membershipPlans.map((p, idx) => (
               <motion.div
                 key={idx}
                 initial={{ opacity: 0, y: 35 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className={`relative rounded-2xl flex flex-col justify-between overflow-hidden p-8 ${
-                  p.isPopular 
-                    ? 'border-2 border-gold bg-gradient-to-b from-dark-gray to-deep-black shadow-xl shadow-gold/10' 
+                className={`relative rounded-2xl flex flex-col justify-between overflow-hidden p-6 lg:p-7 ${
+                  p.isPopular
+                    ? 'border-2 border-gold bg-gradient-to-b from-dark-gray to-deep-black shadow-xl shadow-gold/10'
                     : 'border border-gold/10 bg-dark-gray/30 hover:border-gold/30 hover-gold-shadow'
                 } transition-all duration-300`}
               >
-                {p.isPopular && (
+                {p.isPopular ? (
                   <div className="absolute top-0 right-0 bg-gradient-to-l from-premium-yellow to-gold text-deep-black font-extrabold text-[10px] tracking-wider uppercase px-4 py-1.5 rounded-bl-xl">
                     POPULAR CHOICE
                   </div>
-                )}
+                ) : p.badge ? (
+                  <div className="absolute top-0 right-0 border border-gold/60 text-gold bg-deep-black/90 font-extrabold text-[10px] tracking-wider uppercase px-4 py-1.5 rounded-bl-xl">
+                    {p.badge}
+                  </div>
+                ) : null}
+
                 <div>
                   <span className="text-gray-400 text-sm tracking-wider font-semibold uppercase">{p.name}</span>
-                  <div className="flex items-baseline mt-4 mb-2">
-                    <span className="text-white text-3xl font-extrabold">₹</span>
-                    <span className="text-white text-5xl font-extrabold tracking-tight">{p.price}</span>
+
+                  <div className="flex items-baseline mt-4 mb-1 gap-2 flex-wrap">
+                    <div className="flex items-baseline">
+                      <span className="text-white text-3xl font-extrabold">₹</span>
+                      <span className="text-white text-5xl font-extrabold tracking-tight">{p.price}</span>
+                      {p.priceSuffix && (
+                        <span className="text-gray-400 text-sm font-semibold ml-1">{p.priceSuffix}</span>
+                      )}
+                    </div>
+                    {p.originalPrice && (
+                      <span className="text-gray-500 text-lg line-through font-medium">₹{p.originalPrice}</span>
+                    )}
                   </div>
-                  <span className="text-gold text-sm font-semibold tracking-wide uppercase block mb-6">{p.duration} Duration</span>
-                  
-                  <div className="border-t border-gold/10 pt-6 mt-2">
+
+                  <span className="text-gold text-sm font-semibold tracking-wide uppercase block mb-1">
+                    {p.duration}
+                  </span>
+
+                  {p.admissionFee && (
+                    <span className="text-gray-400 text-xs font-medium tracking-wide block">
+                      {p.admissionFee}
+                    </span>
+                  )}
+                  {p.note && (
+                    <span className="text-gray-500 text-xs italic block mt-1">{p.note}</span>
+                  )}
+
+                  <div className="border-t border-gold/10 pt-6 mt-5">
                     <ul className="space-y-4">
                       {p.benefits.map((b, bIdx) => (
                         <li key={bIdx} className="flex items-start space-x-3 text-sm text-gray-300">
@@ -287,7 +308,7 @@ const LandingPage = () => {
                 </div>
 
                 <div className="mt-8 pt-4">
-                  <button 
+                  <button
                     onClick={() => {
                       if (user) {
                         navigate('/plans');
@@ -296,8 +317,8 @@ const LandingPage = () => {
                       }
                     }}
                     className={`w-full py-4 rounded-full font-bold text-xs tracking-wider transition-all duration-300 ${
-                      p.isPopular 
-                        ? 'bg-gradient-to-r from-premium-yellow to-gold text-deep-black shadow-lg shadow-gold/25 hover:scale-[1.03]' 
+                      p.isPopular
+                        ? 'bg-gradient-to-r from-premium-yellow to-gold text-deep-black shadow-lg shadow-gold/25 hover:scale-[1.03]'
                         : 'border border-gold text-gold hover:bg-gold hover:text-deep-black'
                     }`}
                   >

@@ -5,16 +5,18 @@ import User from '../models/User.js';
 
 // Plan configurations
 const PLANS = {
-  starter: { name: 'Starter Plan', durationMonths: 1, priceInINR: 1500 },
-  standard: { name: 'Standard Plan', durationMonths: 3, priceInINR: 4000 },
-  premium: { name: 'Premium Plan', durationMonths: 6, priceInINR: 7000 }
+  "1month": { name: '1 Month', durationMonths: 1, priceInINR: 1000 },
+  "3month": { name: '3 Months', durationMonths: 3, priceInINR: 3000 },
+  "6month": { name: '6 Months', durationMonths: 6, priceInINR: 5300 },
+  "1year": { name: '1 Year', durationMonths: 12, priceInINR: 10500 },
+  "student": { name: 'Student Plan', durationMonths: 1, priceInINR: 800 },
 };
 
 // @desc    Create Razorpay Order
 // @route   POST /api/payments/order
 // @access  Private
 export const createOrder = async (req, res) => {
-  const { planName } = req.body; // 'starter', 'standard', 'premium'
+  const { planName } = req.body; // '1month', '3month', '6month', '1year', 'student'
 
   const selectedPlan = PLANS[planName.toLowerCase()];
   if (!selectedPlan) {

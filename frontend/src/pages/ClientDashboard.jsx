@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import axios from '../api/axios.js';
 import { gym_first_name, gym_full_name, gym_second_name } from '../constants/constants';
+import gymImage from '../assets/banner/bannerImage.png'
+import { membershipPlans } from '../constants/membershipPlans.js';
 
 const ClientDashboard = () => {
   const { user, updateProfile, refreshUser } = useContext(AuthContext);
@@ -82,7 +84,7 @@ const ClientDashboard = () => {
         axios.get('/payments/my-payments'),
         axios.get('/attendance/my-attendance')
       ]);
-      console.log("payRes:", payRes)
+
       setPayments(payRes.data);
       setAttendance(attRes.data);
     } catch (err) {
@@ -109,7 +111,7 @@ const ClientDashboard = () => {
     });
   };
 
-  const handleRenewalPurchase = async (planId) => {
+  const handleRenewalPurchase = async (planId) => { 
     setLoadingPlan(planId);
     setRenewalError('');
 
@@ -134,6 +136,7 @@ const ClientDashboard = () => {
         currency: orderData.currency,
         name: `${gym_full_name}`,
         description: `Renewal activation of ${planId.toUpperCase()} membership plan`,
+        image: {gymImage},
         order_id: orderData.id,
         handler: async (response) => {
           try {
@@ -159,7 +162,7 @@ const ClientDashboard = () => {
           contact: user.mobile
         },
         theme: {
-          color: '#D4AF37'
+          color: 'var(--color-gold)'
         }
       };
 
@@ -215,7 +218,7 @@ const ClientDashboard = () => {
   };
 
   const remainingDays = getRemainingDays();
-  console.log("Payment:", payments)
+
   const lastPayment = payments.find(p => p.status === 'paid');
 
   if (loading) {
@@ -657,7 +660,7 @@ const ClientDashboard = () => {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {plansList.map((plan) => (
+              {membershipPlans.map((plan) => (
                 <div key={plan.id} className="border border-gold/15 bg-dark-gray/30 p-6 rounded-2xl flex flex-col justify-between hover:border-gold/30 transition-all">
                   <div>
                     <h4 className="text-lg font-bold text-white capitalize">{plan.name}</h4>
@@ -683,59 +686,6 @@ const ClientDashboard = () => {
                   </button>
                 </div>
               ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Simulator Modal */}
-      {showSimulator && simData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-          <div className="glass-premium border-gold/30 rounded-3xl max-w-md w-full p-8 space-y-6 text-center animate-fade-in-up">
-            <div className="mx-auto bg-gold/10 text-gold w-fit p-4 rounded-full">
-              <CreditCard className="h-10 w-10" />
-            </div>
-            
-            <div>
-              <h3 className="text-2xl font-bold text-white">Razorpay Sandbox</h3>
-              <p className="text-sm text-gray-400 mt-2">
-                Simulating payments checkout for {simData.plan.toUpperCase()} Membership.
-              </p>
-            </div>
-
-            <div className="bg-black/50 border border-gold/15 p-4 rounded-xl text-left space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Order ID:</span>
-                <span className="text-white font-mono">{simData.id}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Amount:</span>
-                <span className="text-gold font-bold">₹{simData.amount / 100} INR</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-400">User Prefill:</span>
-                <span className="text-white">{user?.name}</span>
-              </div>
-            </div>
-
-            <div className="bg-gold/5 border border-gold/15 rounded-xl p-3 text-xs text-gray-300 text-left flex items-start space-x-2">
-              <ShieldCheck className="h-4 w-4 text-gold shrink-0 mt-0.5" />
-              <span>We detected mock key modes. Complete testing checkout by selecting a state below.</span>
-            </div>
-
-            <div className="flex flex-col space-y-3 pt-2">
-              <button
-                onClick={() => executeSimulatedPayment('success')}
-                className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-xs tracking-wider rounded-xl hover:scale-[1.02] transition-transform cursor-pointer"
-              >
-                SIMULATE PAYMENT SUCCESS
-              </button>
-              <button
-                onClick={() => executeSimulatedPayment('fail')}
-                className="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs tracking-wider rounded-xl transition-colors cursor-pointer"
-              >
-                SIMULATE PAYMENT FAILURE
-              </button>
             </div>
           </div>
         </div>
