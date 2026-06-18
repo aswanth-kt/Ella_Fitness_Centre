@@ -1,12 +1,11 @@
-# Ella's Fitness Centre Gym Management Web Application (MVP)
+# Ella's Fitness Centre Gym Management Web Application
 
-A modern, high-end Gym Management Platform designed with a luxurious Gold, Yellow, and Black aesthetic. Built with React (Vite, Tailwind CSS v4, Framer Motion) and Node.js (Express, MongoDB).
+A modern, high-end Gym Management Platform designed with a luxurious Red, White, and Black aesthetic. Built with React (Vite, Tailwind CSS v4, Framer Motion) and Node.js (Express, MongoDB).
 
 ---
 
 ## 🌟 Premium Features
 
-- **Luxury Branding:** A dark, high-end aesthetic featuring HSL tailored golds, yellow accents, glassmorphic panels, and smooth hover micro-animations.
 - **Client Workspace:**
   - Active Plan & Expiry Countdown Tracker.
   - Interactive session attendance summary (percentage progress grids).
@@ -20,7 +19,7 @@ A modern, high-end Gym Management Platform designed with a luxurious Gold, Yello
   - Webhook reminders log (WhatsApp reminder trigger & sent logs).
 - **Integrations:**
   - **Razorpay Checkout:** Supports cards, net banking, UPI, and wallets. Features a client-side sandbox payment simulator for offline/test key environments.
-  - **WhatsApp Alert Service:** Automated notifications simulation that outputs beautiful text message logs in the admin console.
+  - **WhatsApp Alert Service:** Automated notifications 
 
 ---
 
@@ -45,11 +44,7 @@ A modern, high-end Gym Management Platform designed with a luxurious Gold, Yello
    ```bash
    cd backend
    ```
-2. Run database seeding script to populate metrics, check-in records, and test credentials:
-   ```bash
-   npm run seed
-   ```
-3. Start the Express API server:
+2. Start the Express API server:
    ```bash
    npm run dev
    ```
@@ -69,25 +64,3 @@ The backend API will run on `http://localhost:5000`.
 The frontend web application will run on `http://localhost:5173`.
 
 ---
-
-## 🔑 Test Credentials (Pre-seeded)
-
-Use these credentials to test both dashboards immediately:
-
-### 1. Administrator (Gym Manager Role)
-- **Email:** `admin@olympus.com`
-- **Password:** `admin123`
-
-### 2. Active Member (Client Role)
-- **Email:** `client@olympus.com`
-- **Password:** `client123`
-
-### 3. Expired Member (Client Role)
-- **Email:** `expired@olympus.com`
-- **Password:** `client123`
-
----
-
-## 🧪 Simulated Sandbox Overrides
-- **Razorpay Simulator:** If keys are test or if Razorpay script fails to load, completing purchases will pop open a custom checkout simulator in the browser. You can select "Simulate Payment Success" or "Simulate Payment Failure".
-- **WhatsApp Webhook:** Accessing the WhatsApp Reminders tab in the Admin panel and clicking **Run Manual Expiry Scan** will output SMS logs directly to the node console and database.

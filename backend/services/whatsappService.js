@@ -1,3 +1,4 @@
+import { gym_first_name } from '../../frontend/src/constants/constants.js';
 import Notification from '../models/Notification.js';
 
 /**
@@ -23,7 +24,7 @@ export const sendWhatsAppMessage = async ({ user, type, templateData }) => {
       message = `Hello ${name},\n\nThis is your monthly gym fee receipt and standing confirmation. Stay fit!\n\nThank you.`;
       break;
     default:
-      message = `Hello ${name},\n\nThis is a notification from your Gold Gym Team.`;
+      message = `Hello ${name},\n\nThis is a notification from your ${gym_first_name} Gym Team.`;
   }
 
   console.log('====================================================');

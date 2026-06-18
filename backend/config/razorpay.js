@@ -8,18 +8,17 @@ try {
   const keyId = process.env.RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
-  if (keyId && keySecret && keyId !== 'rzp_test_mockKeyId12345') {
+  if (keyId && keySecret) {
     razorpayInstance = new Razorpay({
       key_id: keyId,
       key_secret: keySecret
     });
     console.log('Razorpay SDK Initialized Successfully.');
   } else {
-    console.log('Razorpay keys are mock or missing.');
+    console.log('Razorpay keys are missing.');
   }
 } catch (error) {
   console.error('Error initializing Razorpay SDK:', error.message);
-  console.log('Running in Mock Payment Mode.');
 }
 
 export default razorpayInstance;

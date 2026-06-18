@@ -106,7 +106,6 @@ const AdminDashboard = () => {
           memberPage,
         }
       });
-      console.log("member data:", data)
 
       setMembers(data.members);
       setMemberTotalPages(data.totalPages)
