@@ -1,7 +1,7 @@
-import React, { useState, useContext } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Dumbbell, CheckCircle2, Loader, CreditCard, ShieldCheck, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Loader, AlertCircle } from 'lucide-react';
 import axios from '../api/axios.js';
 import { membershipPlans } from '../constants/membershipPlans.js';
 import { gym_full_name } from '../constants/constants.js';
@@ -11,17 +11,8 @@ const PlansPage = () => {
   const { user, refreshUser } = useContext(AuthContext);
   const [loadingPlan, setLoadingPlan] = useState('');
   const [error, setError] = useState('');
-  
-  // Simulator modal states
-  const [simData, setSimData] = useState(null);
 
   const navigate = useNavigate();
-
-  const plans = [
-    { id: 'starter', name: 'Starter Plan', duration: '1 Month', price: 1500, benefits: ['Full gym access during hours', 'Locker & steam room access', '1 Complementary physical assessment', 'Standard workout tracking'] },
-    { id: 'standard', name: 'Standard Plan', duration: '3 Months', price: 4000, isPopular: true, benefits: ['All Starter plan perks', '2 Personal training guidance sessions', 'Custom nutrition guidance manual', 'Body composition tracking'] },
-    { id: 'premium', name: 'Premium Plan', duration: '6 Months', price: 7000, benefits: ['All Standard plan perks', 'Priority personal training booking', 'Weekly nutrition audits', 'Access to VIP recovery lounge'] }
-  ];
 
   // Dynamically load Razorpay SDK script
   const loadRazorpayScript = () => {

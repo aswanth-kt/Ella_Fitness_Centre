@@ -2,15 +2,7 @@ import crypto from 'crypto';
 import razorpayInstance from '../config/razorpay.js';
 import Payment from '../models/Payment.js';
 import User from '../models/User.js';
-
-// Plan configurations
-const PLANS = {
-  "1month": { name: '1 Month', durationMonths: 1, priceInINR: 1000 },
-  "3month": { name: '3 Months', durationMonths: 3, priceInINR: 3000 },
-  "6month": { name: '6 Months', durationMonths: 6, priceInINR: 5300 },
-  "1year": { name: '1 Year', durationMonths: 12, priceInINR: 10500 },
-  "student": { name: 'Student Plan', durationMonths: 1, priceInINR: 800 },
-};
+import { MEMBERSHIP_PLANS } from '../const/membershipPlans.js';
 
 // @desc    Create Razorpay Order
 // @route   POST /api/payments/order
@@ -18,7 +10,7 @@ const PLANS = {
 export const createOrder = async (req, res) => {
   const { planName } = req.body; // '1month', '3month', '6month', '1year', 'student'
 
-  const selectedPlan = PLANS[planName.toLowerCase()];
+  const selectedPlan = MEMBERSHIP_PLANS[planName.toLowerCase()];
   if (!selectedPlan) {
     return res.status(400).json({ message: 'Invalid plan selected' });
   }
@@ -66,7 +58,7 @@ export const verifyPayment = async (req, res) => {
   const { razorpayOrderId, razorpayPaymentId, razorpaySignature, planName } = req.body;
 
   try {
-    const selectedPlan = PLANS[planName.toLowerCase()];
+    const selectedPlan = MEMBERSHIP_PLANS[planName.toLowerCase()];
     if (!selectedPlan) {
       return res.status(400).json({ message: 'Invalid plan' });
     }
