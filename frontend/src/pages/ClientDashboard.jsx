@@ -264,7 +264,7 @@ const ClientDashboard = () => {
                   <div>
                     <span className="text-gray-400 block uppercase">EXPIRY DATE</span>
                     <span className="text-white font-semibold mt-0.5 block">
-                      {user?.membership?.endDate ? new Date(user.membership.endDate).toLocaleDateString() : 'N/A'}
+                      {user?.membership?.endDate ? new Date(user.membership.endDate).toLocaleDateString('en-IN') : 'N/A'}
                     </span>
                   </div>
                   <div>
@@ -342,7 +342,7 @@ const ClientDashboard = () => {
                       <div>
                         <span className="text-gray-400 block">PAID ON</span>
                         <span className="text-white font-semibold mt-0.5">
-                          {new Date(lastPayment.paidAt).toLocaleDateString()}
+                          {new Date(lastPayment.paidAt).toLocaleDateString('en-IN')}
                         </span>
                       </div>
                       <div className="text-right">
@@ -389,7 +389,7 @@ const ClientDashboard = () => {
                         attendance.history.map((record) => (
                           <tr key={record._id} className="hover:bg-white/5 transition-colors">
                             <td className="py-4 font-medium">
-                              {new Date(record.date).toLocaleDateString()}
+                              {new Date(record.date).toLocaleDateString('en-IN')}
                             </td>
                             <td className="py-4 capitalize font-semibold text-white">
                               {record.session}
@@ -425,7 +425,7 @@ const ClientDashboard = () => {
                     payments.map((p) => (
                       <div key={p._id} className="bg-black/40 border border-white/5 p-4 rounded-xl space-y-3">
                         <div className="flex justify-between items-center text-xs">
-                          <span className="text-gray-400 font-semibold">{new Date(p.createdAt).toLocaleDateString()}</span>
+                          <span className="text-gray-400 font-semibold">{new Date(p.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                           <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
                             p.status === 'paid' 
                               ? 'bg-emerald-500/15 text-emerald-400' 

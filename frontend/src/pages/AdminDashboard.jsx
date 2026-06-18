@@ -707,9 +707,9 @@ const AdminDashboard = () => {
                         <td className="py-4 pr-4 text-xs">
                           {member.membership?.startDate ? (
                             <>
-                              <span>{new Date(member.membership.startDate).toLocaleDateString()}</span>
+                              <span>{new Date(member.membership.startDate).toLocaleDateString('en-IN')}</span>
                               <span className="mx-1 text-gold text-[10px]">to</span>
-                              <span>{new Date(member.membership.endDate).toLocaleDateString()}</span>
+                              <span>{new Date(member.membership.endDate).toLocaleDateString('en-IN')}</span>
                             </>
                           ) : (
                             <span className="text-gray-500">Not Applicable</span>
@@ -943,7 +943,7 @@ const AdminDashboard = () => {
                     payments.map((p) => (
                       <tr key={p._id} className="hover:bg-white/5 transition-colors">
                         <td className="py-4 font-semibold text-gray-300">
-                          {new Date(p.createdAt).toLocaleDateString()}
+                          {new Date(p.createdAt).toLocaleDateString('en-IN')}
                         </td>
                         <td className="py-4">
                           {p.user ? (
