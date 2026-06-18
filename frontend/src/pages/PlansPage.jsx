@@ -68,13 +68,10 @@ const PlansPage = () => {
               planName: planId,
             };
 
-            const { data } = await axios.post('/payments/verify', verifyPayload);
-            // console.log("verifyPayload data:", data);
-
+            await axios.post('/payments/verify', verifyPayload);
             await refreshUser();
-            if (data.payment.status === 'paid') {
-              navigate('/dashboard', { state: { paymentSuccess: true } });
-            }
+            navigate('/dashboard', { state: { paymentSuccess: true } });
+
           } catch (err) {
             setError(err.response?.data?.message || 'Payment verification failed. Please contact support.');
           }

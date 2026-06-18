@@ -1,13 +1,12 @@
-import React, { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { 
-  User as UserIcon, Calendar, CreditCard, Shield, Phone, MapPin, 
-  Heart, CheckCircle, AlertTriangle, AlertCircle, Edit3, Loader, CheckSquare,
-  ShieldCheck, CheckCircle2
+  CreditCard, 
+  CheckCircle, AlertTriangle, AlertCircle, Edit3, Loader, CheckSquare,
 } from 'lucide-react';
 import axios from '../api/axios.js';
-import { gym_first_name, gym_full_name, gym_second_name } from '../constants/constants';
+import { gym_first_name, gym_full_name } from '../constants/constants';
 import gymImage from '../assets/banner/bannerImage.png'
 import { membershipPlans } from '../constants/membershipPlans.js';
 
@@ -42,14 +41,6 @@ const ClientDashboard = () => {
   const [showRenewalModal, setShowRenewalModal] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState('');
   const [renewalError, setRenewalError] = useState('');
-  const [showSimulator, setShowSimulator] = useState(false);
-  const [simData, setSimData] = useState(null);
-
-  const plansList = [
-    { id: 'starter', name: 'Starter Plan', duration: '1 Month', price: 1500, benefits: ['Full gym access during hours', 'Locker & steam room access', '1 Complementary physical assessment'] },
-    { id: 'standard', name: 'Standard Plan', duration: '3 Months', price: 4000, benefits: ['All Starter plan perks', '2 Personal training guidance sessions', 'Custom nutrition guidance manual'] },
-    { id: 'premium', name: 'Premium Plan', duration: '6 Months', price: 7000, benefits: ['All Standard plan perks', 'Priority personal training guidance', 'VIP lounge access'] }
-  ];
 
   // Initialize edit form when user loads
   useEffect(() => {
@@ -120,14 +111,7 @@ const ClientDashboard = () => {
       const { data: orderData } = await axios.post('/payments/order', { planName: planId });
 
       // Load Razorpay SDK
-      const scriptLoaded = await loadRazorpayScript();
-      if (!scriptLoaded) {
-        // Fallback to simulator
-        setSimData(orderData);
-        setShowSimulator(true);
-        setLoadingPlan('');
-        return;
-      }
+      await loadRazorpayScript();
 
       // Launch Razorpay checkout
       const options = {
@@ -152,6 +136,7 @@ const ClientDashboard = () => {
             setShowRenewalModal(false);
             setSuccessMsg('Membership renewed and extended successfully!');
             fetchDashboardData();
+
           } catch (err) {
             setRenewalError(err.response?.data?.message || 'Payment verification failed.');
           }
@@ -175,18 +160,6 @@ const ClientDashboard = () => {
     } finally {
       setLoadingPlan('');
     }
-  };
-
-  const executeSimulatedPayment = async (status) => {
-    if (status === 'fail') {
-      setShowSimulator(false);
-      setRenewalError('Payment failed by simulated user.');
-      return;
-    }
-
-    setLoadingPlan(simData.plan);
-    setShowSimulator(false);
-
   };
 
   // Remaining days math helper
@@ -637,16 +610,16 @@ const ClientDashboard = () => {
 
       {/* RENEW MEMBERSHIP PLAN SELECTOR MODAL */}
       {showRenewalModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm overflow-y-auto">
-          <div className="glass-premium border-gold/30 rounded-3xl max-w-4xl w-full p-8 space-y-6 my-8 animate-fade-in-up">
-            <div className="flex justify-between items-center border-b border-gold/10 pb-4">
-              <h3 className="text-xl font-bold text-white flex items-center space-x-2">
-                <CreditCard className="h-5 w-5 text-gold" />
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/85 backdrop-blur-sm overflow-y-auto px-4 py-6 sm:py-10">
+          <div className="glass-premium border-gold/30 rounded-3xl max-w-5xl w-full p-5 sm:p-8 space-y-6 my-auto animate-fade-in-up">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gold/10 pb-4">
+              <h3 className="text-lg sm:text-xl font-bold text-white flex items-center space-x-2">
+                <CreditCard className="h-5 w-5 text-gold shrink-0" />
                 <span>Extend & Renew Membership Subscription</span>
               </h3>
               <button 
                 onClick={() => setShowRenewalModal(false)}
-                className="text-gray-400 hover:text-white font-bold text-sm p-1.5"
+                className="self-end sm:self-auto text-gray-400 hover:text-white font-bold text-sm p-1.5 shrink-0"
               >
                 CLOSE
               </button>
@@ -659,9 +632,9 @@ const ClientDashboard = () => {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {membershipPlans.map((plan) => (
-                <div key={plan.id} className="border border-gold/15 bg-dark-gray/30 p-6 rounded-2xl flex flex-col justify-between hover:border-gold/30 transition-all">
+                <div key={plan.id} className="border border-gold/15 bg-dark-gray/30 p-5 sm:p-6 rounded-2xl flex flex-col justify-between hover:border-gold/30 transition-all">
                   <div>
                     <h4 className="text-lg font-bold text-white capitalize">{plan.name}</h4>
                     <span className="text-xs text-gold uppercase tracking-wider block mt-1">{plan.duration}</span>
@@ -671,7 +644,7 @@ const ClientDashboard = () => {
                       {plan.benefits.map((b, idx) => (
                         <li key={idx} className="flex items-center space-x-2">
                           <span className="w-1.5 h-1.5 bg-gold rounded-full shrink-0"></span>
-                          <span className="truncate">{b}</span>
+                          <span className="truncate flex-1 min-w-0">{b}</span>
                         </li>
                       ))}
                     </ul>
