@@ -112,6 +112,8 @@ export const getUserProfile = async (req, res) => {
         height: user.height,
         weight: user.weight,
         membership: user.membership,
+        healthIssues: user.healthIssues || '',
+        healthDescription: user.healthDescription || '',
       });
     } else {
       res.status(404).json({ message: 'User not found' });
@@ -138,6 +140,14 @@ export const updateUserProfile = async (req, res) => {
       user.height = req.body.height !== undefined ? Number(req.body.height) : user.height;
       user.weight = req.body.weight !== undefined ? Number(req.body.weight) : user.weight;
 
+      if (req.body.healthIssues && req.body.healthIssues !== 'other') {
+        user.healthIssues = req.body.healthIssues;
+        user.healthDescription = '';
+      } else {
+        user.healthIssues = req.body.healthIssues
+        user.healthDescription = req.body.healthDescription
+      }
+
       if (req.body.password) {
         user.password = req.body.password;
       }
@@ -156,6 +166,8 @@ export const updateUserProfile = async (req, res) => {
         emergencyContact: updatedUser.emergencyContact,
         height: updatedUser.height,
         weight: updatedUser.weight,
+        healthIssues: updatedUser.healthIssues,
+        healthDescription: updatedUser.healthDescription,
         membership: updatedUser.membership,
         token: generateToken(updatedUser._id),
       });

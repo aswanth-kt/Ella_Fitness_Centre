@@ -9,6 +9,7 @@ import axios from '../api/axios.js';
 import { gym_first_name, gym_full_name } from '../constants/constants';
 import gymImage from '../assets/banner/bannerImage.png'
 import { membershipPlans } from '../constants/membershipPlans.js';
+import { healthIssuesList } from '../constants/healthIssues.js';
 
 const ClientDashboard = () => {
   const { user, updateProfile, refreshUser } = useContext(AuthContext);
@@ -32,8 +33,12 @@ const ClientDashboard = () => {
     emergencyContact: '',
     password: '',
     height: '',
-    weight: ''
-  });
+    weight: '',
+    healthIssues: '',
+    healthDescription: '',
+  });  
+  const [hasHealthIssue, setHasHealthIssue] = useState(user?.healthIssues !== '' ? true : false);
+
   const [editError, setEditError] = useState('');
   const [editLoading, setEditLoading] = useState(false);
 
@@ -54,7 +59,9 @@ const ClientDashboard = () => {
         emergencyContact: user.emergencyContact || '',
         password: '',
         height: user.height || '',
-        weight: user.weight || ''
+        weight: user.weight || '',
+        healthIssues: user.healthIssues || '',
+        healthDescription: user.healthDescription || '',
       });
     }
   }, [user, isEditing]);
@@ -554,6 +561,82 @@ const ClientDashboard = () => {
                     placeholder="e.g. 70"
                     className="block w-full px-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-colors text-sm"
                   />
+                </div>
+                {/* Health Issue */}
+                <div>
+                  <label className="block text-xs font-bold tracking-wider text-gray-400 uppercase mb-2">
+                    Any Health Issues?
+                  </label>
+
+                  {/* Yes / No toggle */}
+                  <div className="flex space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => setHasHealthIssue (true) }
+                      className={`flex-1 py-3 rounded-xl border text-sm font-semibold transition-colors ${
+                        hasHealthIssue
+                          ? 'bg-gold/20 border-gold text-gold'
+                          : 'bg-black/40 border-gold/15 text-gray-400'
+                      }`}
+                    >
+                      Yes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditForm({
+                          ...editForm,
+                          healthIssues: '',
+                          healthDescription: '',
+                        });
+
+                        setHasHealthIssue(false);
+                      }}
+                      className={`flex-1 py-3 rounded-xl border text-sm font-semibold transition-colors ${
+                        !hasHealthIssue
+                          ? 'bg-gold/20 border-gold text-gold'
+                          : 'bg-black/40 border-gold/15 text-gray-400'
+                      }`}
+                    >
+                      No
+                    </button>
+                  </div>
+
+                  {/* Dropdown - shown only if "Yes" */}
+                  {hasHealthIssue && (
+                    <select
+                      value={editForm.healthIssues}
+                      onChange={(e) => setEditForm({ 
+                        ...editForm, 
+                        healthIssues: e.target.value,
+                        healthDescription: e.target.value !== 'other' ? '' : editForm.healthDescription
+                      })}
+                      className="block w-full mt-3 px-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white focus:outline-none focus:border-gold transition-colors text-sm"
+                    >
+                      <option value="" className="bg-deep-black">Select an issue</option>
+                      {healthIssuesList.map(({ value, label }) => (
+                        <option key={value} value={value} className="bg-deep-black">
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+
+                  {/* Description box - shown only if "Other" is selected */}
+                  {hasHealthIssue && editForm.healthIssues === 'other' && (
+                    <div className="mt-3">
+                      <label className="block text-xs font-bold tracking-wider text-gray-400 uppercase mb-2">
+                        Please describe your health issue
+                      </label>
+                      <textarea
+                        rows="3"
+                        value={editForm.healthDescription}
+                        onChange={(e) => setEditForm({ ...editForm, healthDescription: e.target.value })}
+                        className="block w-full px-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-colors text-sm"
+                        placeholder="Describe your specific health condition or concern..."
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
