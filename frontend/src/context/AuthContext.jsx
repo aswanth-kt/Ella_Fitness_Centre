@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect } from 'react';
 import axios from '../api/axios.js';
 
 // Configure Axios defaults
@@ -88,14 +88,15 @@ export const AuthProvider = ({ children }) => {
   // Update Profile handler
   const updateProfile = async (profileData) => {
     try {
+      console.log("profile data:", profileData)
       const { data } = await axios.put('/auth/profile', profileData);
       // Keep token from updated request if present, or existing token
       const token = data.token || localStorage.getItem('gym_token');
       setUser(data);
       localStorage.setItem('gym_user', JSON.stringify(data));
       if (data.token) {
-        localStorage.setItem('gym_token', data.token);
-        setAuthHeader(data.token);
+        localStorage.setItem('gym_token', token);
+        setAuthHeader(token);
       }
       return { success: true };
     } catch (error) {

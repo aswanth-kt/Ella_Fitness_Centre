@@ -112,6 +112,8 @@ export const getUserProfile = async (req, res) => {
         height: user.height,
         weight: user.weight,
         membership: user.membership,
+        healthIssue: user.healthIssues || '',
+        healthDescription: user.healthDescription || '',
       });
     } else {
       res.status(404).json({ message: 'User not found' });
@@ -127,6 +129,7 @@ export const getUserProfile = async (req, res) => {
 export const updateUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
+    console.log("body:", req.body)
 
     if (user) {
       user.name = req.body.name || user.name;
@@ -137,6 +140,13 @@ export const updateUserProfile = async (req, res) => {
       user.emergencyContact = req.body.emergencyContact || user.emergencyContact;
       user.height = req.body.height !== undefined ? Number(req.body.height) : user.height;
       user.weight = req.body.weight !== undefined ? Number(req.body.weight) : user.weight;
+      user.healthIssues = req.body.healthIssues || user.healthIssues;
+
+      if (req.body.healthIssues && req.body.healthIssues !== 'other') {
+        user.healthDescription = '';
+      } else {
+        user.healthDescription = req.body.healthDescription || user.healthDescription
+      }
 
       if (req.body.password) {
         user.password = req.body.password;
@@ -156,6 +166,8 @@ export const updateUserProfile = async (req, res) => {
         emergencyContact: updatedUser.emergencyContact,
         height: updatedUser.height,
         weight: updatedUser.weight,
+        healthIssues: updatedUser.healthIssues,
+        healthDescription: updatedUser.healthDescription,
         membership: updatedUser.membership,
         token: generateToken(updatedUser._id),
       });
