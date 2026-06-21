@@ -88,7 +88,6 @@ export const AuthProvider = ({ children }) => {
   // Update Profile handler
   const updateProfile = async (profileData) => {
     try {
-      console.log("profile data:", profileData)
       const { data } = await axios.put('/auth/profile', profileData);
       // Keep token from updated request if present, or existing token
       const token = data.token || localStorage.getItem('gym_token');

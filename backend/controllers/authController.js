@@ -112,7 +112,7 @@ export const getUserProfile = async (req, res) => {
         height: user.height,
         weight: user.weight,
         membership: user.membership,
-        healthIssue: user.healthIssues || '',
+        healthIssues: user.healthIssues || '',
         healthDescription: user.healthDescription || '',
       });
     } else {
@@ -129,7 +129,6 @@ export const getUserProfile = async (req, res) => {
 export const updateUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    console.log("body:", req.body)
 
     if (user) {
       user.name = req.body.name || user.name;
@@ -140,12 +139,13 @@ export const updateUserProfile = async (req, res) => {
       user.emergencyContact = req.body.emergencyContact || user.emergencyContact;
       user.height = req.body.height !== undefined ? Number(req.body.height) : user.height;
       user.weight = req.body.weight !== undefined ? Number(req.body.weight) : user.weight;
-      user.healthIssues = req.body.healthIssues || user.healthIssues;
 
       if (req.body.healthIssues && req.body.healthIssues !== 'other') {
+        user.healthIssues = req.body.healthIssues;
         user.healthDescription = '';
       } else {
-        user.healthDescription = req.body.healthDescription || user.healthDescription
+        user.healthIssues = req.body.healthIssues
+        user.healthDescription = req.body.healthDescription
       }
 
       if (req.body.password) {
