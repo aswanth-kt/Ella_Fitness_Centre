@@ -201,7 +201,7 @@ export const getMembers = async (req, res) => {
 // @route   PUT /api/admin/members/:id
 // @access  Private/Admin
 export const updateMember = async (req, res) => {
-  const { name, email, mobile, age, gender, address, emergencyContact, height, weight, membership } = req.body;
+  const { name, email, mobile, age, gender, address, emergencyContact, height, weight, membership  } = req.body;
 
   try {
     const user = await User.findById(req.params.id);

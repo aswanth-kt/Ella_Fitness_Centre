@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { attendence_pagination_limit, gym_first_name, invoice_pagination_limit, members_pagination_limit, reminder_pagination_limit } from '../constants/constants.js';
 import Pagination from '../components/Pagination.jsx';
+import { membershipPlans } from '../constants/membershipPlans.js';
 
 const AdminDashboard = () => {
   // Tabs: 'overview', 'members', 'attendance', 'payments', 'reminders'
@@ -1239,9 +1240,9 @@ const AdminDashboard = () => {
                       className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                     >
                       <option value="none">None</option>
-                      <option value="starter">Starter Plan (1M)</option>
-                      <option value="standard">Standard Plan (3M)</option>
-                      <option value="premium">Premium Plan (6M)</option>
+                      {membershipPlans.map((plan) => (
+                        <option value={plan.id}>{plan.name}</option>
+                      ))}
                     </select>
                   </div>
 
@@ -1459,9 +1460,9 @@ const AdminDashboard = () => {
                       className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                     >
                       <option value="none">None</option>
-                      <option value="starter">Starter Plan (1M)</option>
-                      <option value="standard">Standard Plan (3M)</option>
-                      <option value="premium">Premium Plan (6M)</option>
+                      {membershipPlans.map((plan) => (
+                        <option value={plan.id}>{plan.name}</option>
+                      ))}
                     </select>
                   </div>
 
