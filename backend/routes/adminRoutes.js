@@ -9,7 +9,8 @@ import {
   triggerExpiryReminders,
   createMember,
   getPendingRemindersList,
-  sendManualReminder
+  sendManualReminder,
+  getLastPayment
 } from '../controllers/adminController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -25,6 +26,7 @@ router.route('/members/:id')
   .put(updateMember)
   .delete(deleteMember);
 router.get('/payments', getAllPayments);
+router.get('/payment/:userId', getLastPayment);
 router.get('/reminders', getReminderLogs);
 router.get('/reminders/pending', getPendingRemindersList);
 router.post('/reminders/send', sendManualReminder);

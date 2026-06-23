@@ -201,12 +201,30 @@ export const getMembers = async (req, res) => {
 // @route   PUT /api/admin/members/:id
 // @access  Private/Admin
 export const updateMember = async (req, res) => {
-  const { name, email, mobile, age, gender, address, emergencyContact, height, weight, membership } = req.body;
+  const { 
+    name, email, mobile, age, gender, address, emergencyContact, height, weight,
+    membership, // { plan, startDate, endDate, status }
+    payment, // { amount, paymentMethod }
+    membershipConfirmed // if true create payment
+   } = req.body;
 
-  try {
+   try {
     const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ message: 'Member not found' });
+    }
+
+    // Before saving, check no other user has the same email/mobile
+    if (email && email !== user.email) {
+      const exists = await User.findOne({ email, _id: { $ne: user._id } });
+      if (exists) return res.status(400).json({ message: 'Email already in use' });
+    }
+
+    // validate date
+    if (membership?.startDate && membership?.endDate) {
+      if (new Date(membership.startDate) >= new Date(membership.endDate)) {
+        return res.status(400).json({ message: 'Start date must be before end date' });
+      }
     }
 
     user.name = name || user.name;
@@ -218,15 +236,30 @@ export const updateMember = async (req, res) => {
     user.emergencyContact = emergencyContact || user.emergencyContact;
     user.height = height !== undefined ? Number(height) : user.height;
     user.weight = weight !== undefined ? Number(weight) : user.weight;
+    console.log("mem permision:", membershipConfirmed)
+    if (payment && payment.amount && membership && membershipConfirmed) {
+      console.log("payment created")
+      await Payment.create({
+        user: user._id,
+        amount: Number(payment.amount),
+        paymentMethod: payment.paymentMethod,
+        membershipPlan: membership?.plan,
+        razorpayOrderId: `manual_${Math.random().toString(36).substring(2, 12)}`,
+        razorpayPaymentId: `pay_manual_${Math.random().toString(36).substring(2, 12)}`,
+        status: "paid",
+        paidAt: new Date()
+      });
 
-    if (membership) {
-      user.membership.plan = membership.plan || user.membership.plan;
-      user.membership.status = membership.status || user.membership.status;
-      if (membership.startDate) user.membership.startDate = new Date(membership.startDate);
-      if (membership.endDate) user.membership.endDate = new Date(membership.endDate);
-    }
+      // after renuwal start & end date, membership plan, membership status change
+      user.membership.plan = membership.plan !== 'none' ? membership.plan : user.membership.plan;
+      user.membership.status = 'active';
+      user.membership.startDate = new Date(membership.startDate);
+      user.membership.endDate = new Date(membership.endDate);
+
+    };
 
     const updatedUser = await user.save();
+
     res.json(updatedUser);
 
   } catch (error) {
@@ -294,6 +327,31 @@ export const getAllPayments = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Get last payment details
+// @route   GET /api/admin/payment
+// @access  Private/Admin
+export const getLastPayment = async (req, res) => {
+  try {
+    const user = await User.findById(req.params?.userId);
+    if (!user) {
+      return res.status(400)
+      .json({message: "User not find"})
+    };
+
+    const lastPayment = await Payment.find({
+      user: req.params.userId
+    })
+    .sort({ createdAt: -1 })
+    .limit(1)
+
+    res.json(lastPayment)
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
 
 // @desc    Get notification reminder history
 // @route   GET /api/admin/reminders
