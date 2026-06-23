@@ -512,7 +512,7 @@ const LandingPage = () => {
                   </div>
                   <div>
                     <h4 className="text-white font-bold text-sm">Call Support</h4>
-                    <p className="text-xs text-gray-400 mt-1">{phone_number}</p>
+                    <p className="text-xs text-gray-400 mt-1">+91&nbsp;{phone_number}</p>
                   </div>
                 </div>
 
@@ -522,7 +522,7 @@ const LandingPage = () => {
                   </div>
                   <div>
                     <h4 className="text-white font-bold text-sm">WhatsApp Reminders & Chat</h4>
-                    <p className="text-xs text-gray-400 mt-1">{whatsapp_number}</p>
+                    <p className="text-xs text-gray-400 mt-1">+91&nbsp;{whatsapp_number}</p>
                   </div>
                 </div>
 
