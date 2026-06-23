@@ -10,6 +10,7 @@ import { gym_first_name, gym_full_name } from '../constants/constants';
 import gymImage from '../assets/banner/bannerImage.png'
 import { membershipPlans } from '../constants/membershipPlans.js';
 import { healthIssuesList } from '../constants/healthIssues.js';
+import GymTermsConditions from '../components/GymTermsConditions.jsx';
 
 const ClientDashboard = () => {
   const { user, updateProfile, refreshUser } = useContext(AuthContext);
@@ -458,6 +459,8 @@ const ClientDashboard = () => {
               </div>
 
             </div>
+            {/* Gym terms & conditions */}
+            <GymTermsConditions />
           </div>
         ) : (
           /* PROFILE EDIT VIEW (Includes Height & Weight Fields) */
