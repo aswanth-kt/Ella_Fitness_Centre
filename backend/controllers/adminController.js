@@ -236,9 +236,8 @@ export const updateMember = async (req, res) => {
     user.emergencyContact = emergencyContact || user.emergencyContact;
     user.height = height !== undefined ? Number(height) : user.height;
     user.weight = weight !== undefined ? Number(weight) : user.weight;
-    console.log("mem permision:", membershipConfirmed)
+
     if (payment && payment.amount && membership && membershipConfirmed) {
-      console.log("payment created")
       await Payment.create({
         user: user._id,
         amount: Number(payment.amount),
