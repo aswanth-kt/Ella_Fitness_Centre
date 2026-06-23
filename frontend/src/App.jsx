@@ -12,6 +12,7 @@ import RegisterPage from './pages/RegisterPage';
 import PlansPage from './pages/PlansPage';
 import ClientDashboard from './pages/ClientDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import WhatsAppButton from './components/WhatsAppButton';
 
 // Custom component to conditionally render Footer
 const AppContent = () => {
@@ -62,6 +63,7 @@ const AppContent = () => {
       </main>
 
       {showFooter && <Footer />}
+      <WhatsAppButton />
     </div>
   );
 };

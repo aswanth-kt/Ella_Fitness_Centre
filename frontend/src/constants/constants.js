@@ -6,8 +6,8 @@ export const gym_second_name = "Fitness Zone";
 export const google_map_location = "https://maps.app.goo.gl/tCPRNHvUoJdH64wXA";
 export const address = "First Floor Nihal Complex, Near LIC Building Kottamukal, Adoor"
 export const phone_number = "1234567999";
-export const whatsapp_number = "7674576546";
-export const email = "dc@gmail.com";
+export const whatsapp_number = "9446922776";
+export const email = "teamdcorefitness@gmail.com";
 export const instagram_link = "https://www.instagram.com/dcore_fitnesszone?igsh=MXM1NDYzcjhqOHVsNw==";
 
 // Pagination
