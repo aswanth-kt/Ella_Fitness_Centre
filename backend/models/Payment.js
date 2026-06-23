@@ -9,6 +9,7 @@ const paymentSchema = new mongoose.Schema(
     status: { type: String, enum: ['pending', 'paid', 'failed'], default: 'pending' },
     paymentMethod: { type: String, enum: ['Online Transaction', 'Cash Transaction'], default: 'Online Transaction' },
     membershipPlan: { type: String },
+    invoiceNo: { type: String, unique: true, sparse: true },
     paidAt: { type: Date }
   },
   { timestamps: true }

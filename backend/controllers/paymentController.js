@@ -3,6 +3,7 @@ import razorpayInstance from '../config/razorpay.js';
 import Payment from '../models/Payment.js';
 import User from '../models/User.js';
 import { MEMBERSHIP_PLANS } from '../const/membershipPlans.js';
+import { generateInvoiceNumber } from '../utils/invoiceGenerator.js';
 
 // @desc    Create Razorpay Order
 // @route   POST /api/payments/order
@@ -34,7 +35,7 @@ export const createOrder = async (req, res) => {
       razorpayOrderId: order.id,
       status: 'pending',
       paymentMethod: 'Online Transaction',
-      membershipPlan: planName.toLowerCase()
+      membershipPlan: planName.toLowerCase(),
     });
 
     res.status(201).json({
@@ -85,12 +86,18 @@ export const verifyPayment = async (req, res) => {
       return res.status(400).json({ message: 'Payment verification failed' });
     }
 
+    const invoiceNo = await generateInvoiceNumber();
+console.log("Generated Invoice:", invoiceNo);
     // Update payment record to paid
     const payment = await Payment.findOneAndUpdate(
-      { razorpayOrderId },
+      {
+        razorpayOrderId,
+        status: { $ne: 'paid' }
+      },
       {
         status: 'paid',
         razorpayPaymentId: razorpayPaymentId,
+        invoiceNo,
         paidAt: new Date()
       },
       { new: true }
