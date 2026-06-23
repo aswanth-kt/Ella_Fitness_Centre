@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import { useState, useEffect } from "react";
+import { GenerateReceiptPDF } from "./GenerateReceiptPDF";
  
 const CheckIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-white" stroke="currentColor" strokeWidth={2.5}>
@@ -38,8 +37,6 @@ const Row = ({ label, value, highlight }) => (
 export default function PaymentReceiptModal({ isOpen, onClose, receiptData }) {
   const [copied, setCopied] = useState(false);
   const [visible, setVisible] = useState(false);
-
-  const receiptRef = useRef(null);
  
   // Animate in/out
   useEffect(() => {
@@ -81,27 +78,11 @@ export default function PaymentReceiptModal({ isOpen, onClose, receiptData }) {
     }
   }
 
-  const handleDownload = async () => {
-    const element = receiptRef.current;
-    if(!element) return;
-
-    const canvas = await html2canvas(element, {
-      backgroundColor: '#111111',
-      scale: 2,                   // retina quality
-      useCORS: true
-    });
-
-    const imgData = canvas.toDataURL("image/png");
-
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "px",
-      format: [canvas.width / 2, canvas.height / 2]
-    });
-
-    pdf.addImage(imgData, "PNG", 0, 0, canvas.width / 2, canvas.height / 2);
-    pdf.save(`Dcore-receipt-${receiptData.invoiceNumber || 'd-core-invoice'}.pdf`)
-  }
+  // REPLACE with this:
+  const handleDownload = () => {
+    GenerateReceiptPDF(receiptData);
+  };
+  
  
   if (!isOpen) return null;
  
@@ -158,7 +139,6 @@ export default function PaymentReceiptModal({ isOpen, onClose, receiptData }) {
  
         {/* Card */}
         <div
-          ref={receiptRef}
           className="relative rounded-2xl overflow-hidden shadow-2xl"
           style={{
             backgroundColor: "#111111",
