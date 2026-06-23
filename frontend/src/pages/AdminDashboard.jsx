@@ -58,8 +58,12 @@ const AdminDashboard = () => {
   const [editForm, setEditForm] = useState({
     name: '', email: '', mobile: '', age: '', gender: 'male', address: '', emergencyContact: '',
     height: '', weight: '',
-    membership: { plan: 'none', status: 'none', startDate: '', endDate: '' }
+    membership: { plan: 'none', status: 'none', startDate: '', endDate: '' },
+    payment: { amount: '', paymentMethod: 'Cash Transaction' }
   });
+
+  // edit membership confirmation for Membership Validity Overrides.
+  const [membershipConfirmed, setMembershipConfirmed] = useState(false);
 
   // Manual Add Member Modal State
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -267,8 +271,21 @@ const AdminDashboard = () => {
     }
   };
 
+
+  // fetch last payment details for fill edit form.
+  const fetchLastPayment = async (userId) => {
+    try {
+      const { data } = await axios.get(`/admin/payment/${userId}`);
+      return data;
+    } catch (err) {
+      setErrorMsg(err.response?.data?.message || 'Error modifying member settings - fetching last payment.');
+    }
+  };
+  
   // Open Edit Modal
-  const openEditModal = (member) => {
+  const openEditModal = async (member) => {
+    const lastPayment = await fetchLastPayment(member._id)
+
     setEditingMember(member);
     setEditForm({
       name: member.name || '',
@@ -285,6 +302,10 @@ const AdminDashboard = () => {
         status: member.membership?.status || 'none',
         startDate: member.membership?.startDate ? new Date(member.membership.startDate).toISOString().split('T')[0] : '',
         endDate: member.membership?.endDate ? new Date(member.membership.endDate).toISOString().split('T')[0] : ''
+      },
+      payment: {
+        amount: lastPayment[0]?.amount || '',
+        paymentMethod: lastPayment[0]?.paymentMethod || '',
       }
     });
     setEditModalOpen(true);
@@ -295,7 +316,10 @@ const AdminDashboard = () => {
     setActionLoading(true);
     setErrorMsg('');
     try {
-      await axios.put(`/admin/members/${editingMember._id}`, editForm);
+      await axios.put(`/admin/members/${editingMember._id}`, {
+        ...editForm,
+        membershipConfirmed
+      });
       setSuccessMsg('Member details modified successfully.');
       setEditModalOpen(false);
       await Promise.all([fetchMembers(), fetchStats(), fetchDailyAttendance()]);
@@ -303,6 +327,7 @@ const AdminDashboard = () => {
       setErrorMsg(err.response?.data?.message || 'Error modifying member settings.');
     } finally {
       setActionLoading(false);
+      setMembershipConfirmed(false)
     }
   };
 
@@ -342,7 +367,6 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-deep-black pt-28 pb-20 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
         {/* Banner Alert Prompts */}
         {successMsg && (
           <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm rounded-2xl p-4 mb-6 flex items-start space-x-3">
@@ -362,16 +386,26 @@ const AdminDashboard = () => {
           <div>
             <div className="flex items-center space-x-2">
               <Shield className="h-6 w-6 text-gold" />
-              <h1 className="text-3xl font-bold tracking-tight">{gym_first_name} Admin Panel</h1>
+              <h1 className="text-3xl font-bold tracking-tight">
+                {gym_first_name} Admin Panel
+              </h1>
             </div>
-            <p className="text-gray-400 text-sm mt-1">Unified command hub for memberships, check-ins, revenues, and alerts.</p>
+            <p className="text-gray-400 text-sm mt-1">
+              Unified command hub for memberships, check-ins, revenues, and
+              alerts.
+            </p>
           </div>
-          <button 
+          <button
             disabled={actionLoading}
             onClick={async () => {
               setLoading(true);
-              await Promise.all([fetchStats(), fetchMembers(), fetchPayments(), fetchDailyAttendance()]);
-              if (activeTab === 'reminders') await fetchPendingReminders();
+              await Promise.all([
+                fetchStats(),
+                fetchMembers(),
+                fetchPayments(),
+                fetchDailyAttendance(),
+              ]);
+              if (activeTab === "reminders") await fetchPendingReminders();
               setLoading(false);
             }}
             className="flex items-center space-x-2 border border-gold/20 hover:bg-gold/10 text-gold text-xs tracking-widest font-bold px-5 py-3 rounded-full transition-colors cursor-pointer"
@@ -384,19 +418,19 @@ const AdminDashboard = () => {
         {/* Navigation Tabs */}
         <div className="flex border-b border-gold/15 mb-10 overflow-x-auto whitespace-nowrap">
           {[
-            { id: 'overview', label: 'OVERVIEW & ANALYTICS' },
-            { id: 'members', label: 'MEMBER DIRECTORY' },
-            { id: 'attendance', label: 'ATTENDANCE BOARD' },
-            { id: 'payments', label: 'INVOICES & REVENUE' },
-            { id: 'reminders', label: 'RENEWAL REMINDERS' }
-          ].map(tab => (
+            { id: "overview", label: "OVERVIEW & ANALYTICS" },
+            { id: "members", label: "MEMBER DIRECTORY" },
+            { id: "attendance", label: "ATTENDANCE BOARD" },
+            { id: "payments", label: "INVOICES & REVENUE" },
+            { id: "reminders", label: "RENEWAL REMINDERS" },
+          ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`py-4 px-6 font-bold text-xs tracking-wider border-b-2 transition-all ${
-                activeTab === tab.id 
-                  ? 'border-gold text-gold bg-gold/5' 
-                  : 'border-transparent text-gray-400 hover:text-white'
+                activeTab === tab.id
+                  ? "border-gold text-gold bg-gold/5"
+                  : "border-transparent text-gray-400 hover:text-white"
               }`}
             >
               {tab.label}
@@ -406,43 +440,64 @@ const AdminDashboard = () => {
 
         {/* TAB CONTENTS */}
         {/* T1: Overview Section (Calculations adjusted for cash/online revenue & daily attendance stats) */}
-        {activeTab === 'overview' && (
+        {activeTab === "overview" && (
           <div className="space-y-10">
             {/* Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              
               {/* Total Members */}
               <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
                 <div>
-                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Total Members</span>
-                  <span className="text-3xl font-extrabold text-white mt-1 block">{stats.cards.totalMembers}</span>
+                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">
+                    Total Members
+                  </span>
+                  <span className="text-3xl font-extrabold text-white mt-1 block">
+                    {stats.cards.totalMembers}
+                  </span>
                 </div>
-                <div className="bg-gold/10 p-3 rounded-lg text-gold"><Users className="h-5 w-5" /></div>
+                <div className="bg-gold/10 p-3 rounded-lg text-gold">
+                  <Users className="h-5 w-5" />
+                </div>
               </div>
 
               {/* Active Members */}
               <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
                 <div>
-                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Active Members</span>
-                  <span className="text-3xl font-extrabold text-emerald-400 mt-1 block">{stats.cards.activeMembers}</span>
+                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">
+                    Active Members
+                  </span>
+                  <span className="text-3xl font-extrabold text-emerald-400 mt-1 block">
+                    {stats.cards.activeMembers}
+                  </span>
                 </div>
-                <div className="bg-emerald-500/10 p-3 rounded-lg text-emerald-400"><CheckCircle className="h-5 w-5" /></div>
+                <div className="bg-emerald-500/10 p-3 rounded-lg text-emerald-400">
+                  <CheckCircle className="h-5 w-5" />
+                </div>
               </div>
 
               {/* Expired Members */}
               <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
                 <div>
-                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Expired Members</span>
-                  <span className="text-3xl font-extrabold text-red-400 mt-1 block">{stats.cards.expiredMembers}</span>
+                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">
+                    Expired Members
+                  </span>
+                  <span className="text-3xl font-extrabold text-red-400 mt-1 block">
+                    {stats.cards.expiredMembers}
+                  </span>
                 </div>
-                <div className="bg-red-500/10 p-3 rounded-lg text-red-400"><AlertTriangle className="h-5 w-5" /></div>
+                <div className="bg-red-500/10 p-3 rounded-lg text-red-400">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
               </div>
 
               {/* Today's Present Count */}
               <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
                 <div>
-                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Today Present</span>
-                  <span className="text-3xl font-extrabold text-emerald-400 mt-1 block">{stats.cards.todayAttendance.totalPresent}</span>
+                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">
+                    Today Present
+                  </span>
+                  <span className="text-3xl font-extrabold text-emerald-400 mt-1 block">
+                    {stats.cards.todayAttendance.totalPresent}
+                  </span>
                 </div>
                 <div className="bg-emerald-500/10 p-3 rounded-lg text-emerald-400">
                   <CheckCircle2 className="h-5 w-5" />
@@ -452,8 +507,12 @@ const AdminDashboard = () => {
               {/* Today's Absent Count */}
               <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
                 <div>
-                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Today Absent</span>
-                  <span className="text-3xl font-extrabold text-red-400 mt-1 block">{stats.cards.todayAttendance.totalAbsent}</span>
+                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">
+                    Today Absent
+                  </span>
+                  <span className="text-3xl font-extrabold text-red-400 mt-1 block">
+                    {stats.cards.todayAttendance.totalAbsent}
+                  </span>
                 </div>
                 <div className="bg-red-500/10 p-3 rounded-lg text-red-400">
                   <AlertCircle className="h-5 w-5" />
@@ -463,8 +522,12 @@ const AdminDashboard = () => {
               {/* Morning Session Count */}
               <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
                 <div>
-                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Morning Session</span>
-                  <span className="text-3xl font-extrabold text-gold mt-1 block">{stats.cards.todayAttendance.morningPresent}</span>
+                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">
+                    Morning Session
+                  </span>
+                  <span className="text-3xl font-extrabold text-gold mt-1 block">
+                    {stats.cards.todayAttendance.morningPresent}
+                  </span>
                 </div>
                 <div className="bg-gold/10 p-3 rounded-lg text-gold">
                   <Calendar className="h-5 w-5" />
@@ -474,8 +537,12 @@ const AdminDashboard = () => {
               {/* Evening Session Count */}
               <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
                 <div>
-                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Evening Session</span>
-                  <span className="text-3xl font-extrabold text-gold mt-1 block">{stats.cards.todayAttendance.eveningPresent}</span>
+                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">
+                    Evening Session
+                  </span>
+                  <span className="text-3xl font-extrabold text-gold mt-1 block">
+                    {stats.cards.todayAttendance.eveningPresent}
+                  </span>
                 </div>
                 <div className="bg-gold/10 p-3 rounded-lg text-gold">
                   <Calendar className="h-5 w-5" />
@@ -485,64 +552,124 @@ const AdminDashboard = () => {
               {/* Monthly Revenue */}
               <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
                 <div>
-                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Monthly Revenue</span>
-                  <span className="text-2xl font-extrabold text-white mt-1.5 block">₹{stats.cards.monthlyRevenue.toLocaleString()}</span>
+                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">
+                    Monthly Revenue
+                  </span>
+                  <span className="text-2xl font-extrabold text-white mt-1.5 block">
+                    ₹{stats.cards.monthlyRevenue.toLocaleString()}
+                  </span>
                 </div>
-                <div className="bg-white/10 p-3 rounded-lg text-white"><IndianRupee className="h-5 w-5" /></div>
+                <div className="bg-white/10 p-3 rounded-lg text-white">
+                  <IndianRupee className="h-5 w-5" />
+                </div>
               </div>
 
               {/* Total Revenue */}
               <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
                 <div>
-                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Total Revenue</span>
-                  <span className="text-2xl font-extrabold text-white mt-1.5 block">₹{stats.cards.totalRevenue.toLocaleString()}</span>
+                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">
+                    Total Revenue
+                  </span>
+                  <span className="text-2xl font-extrabold text-white mt-1.5 block">
+                    ₹{stats.cards.totalRevenue.toLocaleString()}
+                  </span>
                 </div>
-                <div className="bg-white/10 p-3 rounded-lg text-white"><IndianRupee className="h-5 w-5" /></div>
+                <div className="bg-white/10 p-3 rounded-lg text-white">
+                  <IndianRupee className="h-5 w-5" />
+                </div>
               </div>
 
               {/* Online Revenue */}
               <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
                 <div>
-                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Online Revenue</span>
-                  <span className="text-2xl font-extrabold text-emerald-400 mt-1.5 block">₹{stats.cards.onlineRevenue.toLocaleString()}</span>
+                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">
+                    Online Revenue
+                  </span>
+                  <span className="text-2xl font-extrabold text-emerald-400 mt-1.5 block">
+                    ₹{stats.cards.onlineRevenue.toLocaleString()}
+                  </span>
                 </div>
-                <div className="bg-emerald-500/10 p-3 rounded-lg text-emerald-400"><CreditCard className="h-5 w-5" /></div>
+                <div className="bg-emerald-500/10 p-3 rounded-lg text-emerald-400">
+                  <CreditCard className="h-5 w-5" />
+                </div>
               </div>
 
               {/* Cash Revenue */}
               <div className="glass-premium rounded-xl p-5 border border-gold/15 flex justify-between items-center">
                 <div>
-                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">Cash Revenue</span>
-                  <span className="text-2xl font-extrabold text-gold mt-1.5 block">₹{stats.cards.cashRevenue.toLocaleString()}</span>
+                  <span className="text-gray-400 text-[10px] font-bold tracking-wider uppercase block">
+                    Cash Revenue
+                  </span>
+                  <span className="text-2xl font-extrabold text-gold mt-1.5 block">
+                    ₹{stats.cards.cashRevenue.toLocaleString()}
+                  </span>
                 </div>
-                <div className="bg-gold/10 p-3 rounded-lg text-gold"><IndianRupee className="h-5 w-5" /></div>
+                <div className="bg-gold/10 p-3 rounded-lg text-gold">
+                  <IndianRupee className="h-5 w-5" />
+                </div>
               </div>
-
             </div>
 
             {/* Recharts Analytics Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              
               {/* Revenue Area Chart */}
               <div className="glass-premium rounded-2xl p-6 border border-gold/15 lg:col-span-2 space-y-6">
                 <div>
-                  <h3 className="text-lg font-bold text-white">Revenue Analytics</h3>
-                  <p className="text-xs text-gray-400">Total payments collected monthly over the past 6 months.</p>
+                  <h3 className="text-lg font-bold text-white">
+                    Revenue Analytics
+                  </h3>
+                  <p className="text-xs text-gray-400">
+                    Total payments collected monthly over the past 6 months.
+                  </p>
                 </div>
                 <div className="w-full">
                   <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={stats.charts.revenueData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <AreaChart
+                      data={stats.charts.revenueData}
+                      margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                    >
                       <defs>
-                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="var(--color-gold)" stopOpacity={0.6}/>
-                          <stop offset="95%" stopColor="var(--color-gold)" stopOpacity={0}/>
+                        <linearGradient
+                          id="colorRevenue"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="5%"
+                            stopColor="var(--color-gold)"
+                            stopOpacity={0.6}
+                          />
+                          <stop
+                            offset="95%"
+                            stopColor="var(--color-gold)"
+                            stopOpacity={0}
+                          />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="rgba(255,255,255,0.05)"
+                      />
                       <XAxis dataKey="month" stroke="#A3A3A3" fontSize={11} />
                       <YAxis stroke="#A3A3A3" fontSize={11} />
-                      <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', borderColor: '#D4AF37', borderRadius: '12px' }} />
-                      <Area type="monotone" dataKey="revenue" stroke="var(--color-gold)" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" name="Revenue (₹)" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#1A1A1A",
+                          borderColor: "#D4AF37",
+                          borderRadius: "12px",
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="revenue"
+                        stroke="var(--color-gold)"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#colorRevenue)"
+                        name="Revenue (₹)"
+                      />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -551,8 +678,12 @@ const AdminDashboard = () => {
               {/* Members Tiers Pie Chart */}
               <div className="glass-premium rounded-2xl p-6 border border-gold/15 space-y-6">
                 <div>
-                  <h3 className="text-lg font-bold text-white">Membership Distribution</h3>
-                  <p className="text-xs text-gray-400">Division of current client bases across subscription tiers.</p>
+                  <h3 className="text-lg font-bold text-white">
+                    Membership Distribution
+                  </h3>
+                  <p className="text-xs text-gray-400">
+                    Division of current client bases across subscription tiers.
+                  </p>
                 </div>
                 <div className="flex flex-col items-center justify-center">
                   <ResponsiveContainer width="100%" height={230}>
@@ -567,10 +698,19 @@ const AdminDashboard = () => {
                         dataKey="value"
                       >
                         {stats.charts.membershipData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={GOLD_COLORS[index % GOLD_COLORS.length]} />
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={GOLD_COLORS[index % GOLD_COLORS.length]}
+                          />
                         ))}
                       </Pie>
-                      <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', borderColor: '#D4AF37', borderRadius: '12px' }} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#1A1A1A",
+                          borderColor: "#D4AF37",
+                          borderRadius: "12px",
+                        }}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
 
@@ -578,8 +718,17 @@ const AdminDashboard = () => {
                   <div className="grid grid-cols-2 gap-4 w-full mt-4 border-t border-white/5 pt-4 text-xs">
                     {stats.charts.membershipData.map((d, index) => (
                       <div key={d.name} className="flex items-center space-x-2">
-                        <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: GOLD_COLORS[index % GOLD_COLORS.length] }}></span>
-                        <span className="text-gray-400 truncate">{d.name}: <strong className="text-white">{d.value}</strong></span>
+                        <span
+                          className="w-3 h-3 rounded-full shrink-0"
+                          style={{
+                            backgroundColor:
+                              GOLD_COLORS[index % GOLD_COLORS.length],
+                          }}
+                        ></span>
+                        <span className="text-gray-400 truncate">
+                          {d.name}:{" "}
+                          <strong className="text-white">{d.value}</strong>
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -589,30 +738,51 @@ const AdminDashboard = () => {
               {/* Weekly Attendance Bar Chart */}
               <div className="glass-premium rounded-2xl p-6 border border-gold/15 lg:col-span-3 space-y-6">
                 <div>
-                  <h3 className="text-lg font-bold text-white">Attendance Analytics (Past 7 Days)</h3>
-                  <p className="text-xs text-gray-400">Volume of check-ins registered daily over the past week.</p>
+                  <h3 className="text-lg font-bold text-white">
+                    Attendance Analytics (Past 7 Days)
+                  </h3>
+                  <p className="text-xs text-gray-400">
+                    Volume of check-ins registered daily over the past week.
+                  </p>
                 </div>
                 <div className="w-full">
                   <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={stats.charts.attendanceData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="rgba(255,255,255,0.05)"
+                      />
                       <XAxis dataKey="day" stroke="#A3A3A3" fontSize={11} />
-                      <YAxis stroke="#A3A3A3" fontSize={11} allowDecimals={false} />
-                      <Tooltip contentStyle={{ backgroundColor: '#1A1A1A', borderColor: '#D4AF37', borderRadius: '12px' }} />
-                      <Bar dataKey="present" fill="var(--color-gold-hover)" radius={[4, 4, 0, 0]} name="Check-ins" barSize={35} />
+                      <YAxis
+                        stroke="#A3A3A3"
+                        fontSize={11}
+                        allowDecimals={false}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#1A1A1A",
+                          borderColor: "#D4AF37",
+                          borderRadius: "12px",
+                        }}
+                      />
+                      <Bar
+                        dataKey="present"
+                        fill="var(--color-gold-hover)"
+                        radius={[4, 4, 0, 0]}
+                        name="Check-ins"
+                        barSize={35}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
-
             </div>
           </div>
         )}
 
         {/* T2: Member Directory Section (Display manual creation triggers and height/weight attributes) */}
-        {activeTab === 'members' && (
+        {activeTab === "members" && (
           <div className="glass-premium rounded-2xl border border-gold/15 p-6 space-y-6">
-            
             {/* Filters Bar */}
             <div className="flex flex-col md:flex-row gap-4 justify-between items-stretch">
               {/* Search input */}
@@ -645,10 +815,11 @@ const AdminDashboard = () => {
                   className="px-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                 >
                   <option value="all">All Plans</option>
-                  <option value="starter">Starter Plan</option>
-                  <option value="standard">Standard Plan</option>
-                  <option value="premium">Premium Plan</option>
-                  <option value="none">No Subscription</option>
+                  {membershipPlans.map((plan) => (
+                    <option key={plan.id} value={plan.id}>
+                      {plan.name}
+                    </option>
+                  ))}
                 </select>
                 <button
                   onClick={() => setAddModalOpen(true)}
@@ -677,60 +848,104 @@ const AdminDashboard = () => {
                 <tbody className="divide-y divide-white/5 text-sm text-gray-300">
                   {members.length === 0 ? (
                     <tr>
-                      <td colSpan="7" className="py-8 text-center text-gray-500 text-xs">
+                      <td
+                        colSpan="7"
+                        className="py-8 text-center text-gray-500 text-xs"
+                      >
                         No members matching current search criteria.
                       </td>
                     </tr>
                   ) : (
                     members.map((member) => (
-                      <tr key={member._id} className="hover:bg-white/5 transition-colors">
+                      <tr
+                        key={member._id}
+                        className="hover:bg-white/5 transition-colors"
+                      >
                         <td className="py-4 pr-4">
-                          <div className="font-bold text-white">{member.name}</div>
-                          <div className="text-xs text-gray-500">{member.email}</div>
+                          <div className="font-bold text-white">
+                            {member.name}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {member.email}
+                          </div>
                         </td>
                         <td className="py-4 pr-4">
                           <div>+91 {member.mobile}</div>
-                          <div className="text-xs text-gray-400 capitalize">{member.gender}, {member.age} yrs</div>
+                          <div className="text-xs text-gray-400 capitalize">
+                            {member.gender}, {member.age} yrs
+                          </div>
                         </td>
                         <td className="py-4 pr-4 text-center text-xs">
                           {member.height || member.weight ? (
                             <div className="space-y-0.5">
-                              {member.height && <div>H: <strong className="text-white font-bold">{member.height} cm</strong></div>}
-                              {member.weight && <div>W: <strong className="text-white font-bold">{member.weight} kg</strong></div>}
+                              {member.height && (
+                                <div>
+                                  H:{" "}
+                                  <strong className="text-white font-bold">
+                                    {member.height} cm
+                                  </strong>
+                                </div>
+                              )}
+                              {member.weight && (
+                                <div>
+                                  W:{" "}
+                                  <strong className="text-white font-bold">
+                                    {member.weight} kg
+                                  </strong>
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <span className="text-gray-500">Not recorded</span>
                           )}
                         </td>
                         <td className="py-4 pr-4 font-semibold capitalize">
-                          {member.membership?.plan === 'none' ? 'None' : `${member.membership?.plan} Plan`}
+                          {member.membership?.plan === "none"
+                            ? "None"
+                            : `${member.membership?.plan} Plan`}
                         </td>
                         <td className="py-4 pr-4 text-xs">
                           {member.membership?.startDate ? (
                             <>
-                              <span>{new Date(member.membership.startDate).toLocaleDateString('en-IN')}</span>
-                              <span className="mx-1 text-gold text-[10px]">to</span>
-                              <span>{new Date(member.membership.endDate).toLocaleDateString('en-IN')}</span>
+                              <span>
+                                {new Date(
+                                  member.membership.startDate,
+                                ).toLocaleDateString("en-IN")}
+                              </span>
+                              <span className="mx-1 text-gold text-[10px]">
+                                to
+                              </span>
+                              <span>
+                                {new Date(
+                                  member.membership.endDate,
+                                ).toLocaleDateString("en-IN")}
+                              </span>
                             </>
                           ) : (
-                            <span className="text-gray-500">Not Applicable</span>
+                            <span className="text-gray-500">
+                              Not Applicable
+                            </span>
                           )}
                         </td>
                         <td className="py-4 pr-4 text-center">
-                          <span className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${
-                            member.membership?.status === 'active' 
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                              : member.membership?.status === 'expired'
-                                ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                                : 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
-                          }`}>
-                            {member.membership?.status || 'none'}
+                          <span
+                            className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${
+                              member.membership?.status === "active"
+                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                : member.membership?.status === "expired"
+                                  ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                                  : "bg-gray-500/10 text-gray-400 border border-gray-500/20"
+                            }`}
+                          >
+                            {member.membership?.status || "none"}
                           </span>
                         </td>
                         <td className="py-4 text-center">
                           <div className="flex items-center justify-center space-x-2">
                             <button
-                              onClick={() => openEditModal(member)}
+                              onClick={() => {
+                                openEditModal(member);
+                              }}
                               className="p-2 border border-gold/15 hover:bg-gold hover:text-deep-black text-gold rounded-lg transition-colors cursor-pointer"
                               title="Edit Member"
                             >
@@ -759,7 +974,6 @@ const AdminDashboard = () => {
                     onPageChange={(page) => setMemberPage(page)}
                     colSpan={7}
                   />
-
                 </tbody>
               </table>
             </div>
@@ -767,14 +981,18 @@ const AdminDashboard = () => {
         )}
 
         {/* T3: Session Attendance Grid Section (Morning Present, Evening Present, Absent toggling rules) */}
-        {activeTab === 'attendance' && (
+        {activeTab === "attendance" && (
           <div className="glass-premium rounded-2xl border border-gold/15 p-6 space-y-6">
-            
             {/* Header controls */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <h3 className="text-lg font-bold text-white">Daily Session Check-in sheets</h3>
-                <p className="text-xs text-gray-400">Select a date to check in members. Only ONE present session per member per day is allowed.</p>
+                <h3 className="text-lg font-bold text-white">
+                  Daily Session Check-in sheets
+                </h3>
+                <p className="text-xs text-gray-400">
+                  Select a date to check in members. Only ONE present session
+                  per member per day is allowed.
+                </p>
               </div>
               <div>
                 <input
@@ -792,37 +1010,61 @@ const AdminDashboard = () => {
                 <thead>
                   <tr className="border-b border-white/10 text-xs text-gray-400 font-bold uppercase tracking-wider">
                     <th className="py-4">Member Details</th>
-                    <th className="py-4 text-center">Mark Daily Check-in Status</th>
+                    <th className="py-4 text-center">
+                      Mark Daily Check-in Status
+                    </th>
                     <th className="py-4 text-center">Final Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5 text-sm text-gray-300">
                   {dailyAttendance.length === 0 ? (
                     <tr>
-                      <td colSpan="3" className="py-8 text-center text-gray-500 text-xs">
-                        No clients registered in the database to mark attendance.
+                      <td
+                        colSpan="3"
+                        className="py-8 text-center text-gray-500 text-xs"
+                      >
+                        No clients registered in the database to mark
+                        attendance.
                       </td>
                     </tr>
                   ) : (
                     dailyAttendance.map((rec) => {
                       return (
-                        <tr key={rec._id} className="hover:bg-white/5 transition-colors">
+                        <tr
+                          key={rec._id}
+                          className="hover:bg-white/5 transition-colors"
+                        >
                           <td className="py-4">
-                            <div className="font-bold text-white">{rec.name}</div>
-                            <div className="text-xs text-gray-400">{rec.mobile}</div>
+                            <div className="font-bold text-white">
+                              {rec.name}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              {rec.mobile}
+                            </div>
                           </td>
                           <td className="py-4">
                             <div className="flex justify-center space-x-3">
                               {/* Morning Session Button */}
                               <button
-                                disabled={rec.status === 'Present' && rec.session === 'Evening'}
-                                onClick={() => updateMemberAttendance(rec._id, 'Morning', 'Present')}
+                                disabled={
+                                  rec.status === "Present" &&
+                                  rec.session === "Evening"
+                                }
+                                onClick={() =>
+                                  updateMemberAttendance(
+                                    rec._id,
+                                    "Morning",
+                                    "Present",
+                                  )
+                                }
                                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                                  rec.status === 'Present' && rec.session === 'Morning'
-                                    ? 'bg-emerald-500 text-deep-black font-extrabold'
-                                    : rec.status === 'Present' && rec.session === 'Evening'
-                                      ? 'border border-white/5 text-gray-600 cursor-not-allowed font-light'
-                                      : 'border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 cursor-pointer'
+                                  rec.status === "Present" &&
+                                  rec.session === "Morning"
+                                    ? "bg-emerald-500 text-deep-black font-extrabold"
+                                    : rec.status === "Present" &&
+                                        rec.session === "Evening"
+                                      ? "border border-white/5 text-gray-600 cursor-not-allowed font-light"
+                                      : "border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 cursor-pointer"
                                 }`}
                               >
                                 MORNING PRESENT
@@ -830,14 +1072,25 @@ const AdminDashboard = () => {
 
                               {/* Evening Session Button */}
                               <button
-                                disabled={rec.status === 'Present' && rec.session === 'Morning'}
-                                onClick={() => updateMemberAttendance(rec._id, 'Evening', 'Present')}
+                                disabled={
+                                  rec.status === "Present" &&
+                                  rec.session === "Morning"
+                                }
+                                onClick={() =>
+                                  updateMemberAttendance(
+                                    rec._id,
+                                    "Evening",
+                                    "Present",
+                                  )
+                                }
                                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                                  rec.status === 'Present' && rec.session === 'Evening'
-                                    ? 'bg-emerald-500 text-deep-black font-extrabold'
-                                    : rec.status === 'Present' && rec.session === 'Morning'
-                                      ? 'border border-white/5 text-gray-600 cursor-not-allowed font-light'
-                                      : 'border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 cursor-pointer'
+                                  rec.status === "Present" &&
+                                  rec.session === "Evening"
+                                    ? "bg-emerald-500 text-deep-black font-extrabold"
+                                    : rec.status === "Present" &&
+                                        rec.session === "Morning"
+                                      ? "border border-white/5 text-gray-600 cursor-not-allowed font-light"
+                                      : "border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 cursor-pointer"
                                 }`}
                               >
                                 EVENING PRESENT
@@ -845,11 +1098,17 @@ const AdminDashboard = () => {
 
                               {/* Absent Button */}
                               <button
-                                onClick={() => updateMemberAttendance(rec._id, null, 'Absent')}
+                                onClick={() =>
+                                  updateMemberAttendance(
+                                    rec._id,
+                                    null,
+                                    "Absent",
+                                  )
+                                }
                                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                                  rec.status === 'Absent'
-                                    ? 'bg-red-500 text-white font-extrabold animate-pulse'
-                                    : 'border border-red-500/20 text-red-400 hover:bg-red-500/10'
+                                  rec.status === "Absent"
+                                    ? "bg-red-500 text-white font-extrabold animate-pulse"
+                                    : "border border-red-500/20 text-red-400 hover:bg-red-500/10"
                                 }`}
                               >
                                 ABSENT
@@ -857,19 +1116,23 @@ const AdminDashboard = () => {
                             </div>
                           </td>
                           <td className="py-4 text-center">
-                            <span className={`inline-block text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase ${
-                              rec.status === 'Present' 
-                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' 
-                                : 'bg-red-500/15 text-red-400 border border-red-500/20'
-                            }`}>
-                              {rec.status === 'Present' ? `Present (${rec.session})` : 'Absent'}
+                            <span
+                              className={`inline-block text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase ${
+                                rec.status === "Present"
+                                  ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
+                                  : "bg-red-500/15 text-red-400 border border-red-500/20"
+                              }`}
+                            >
+                              {rec.status === "Present"
+                                ? `Present (${rec.session})`
+                                : "Absent"}
                             </span>
                           </td>
                         </tr>
                       );
                     })
                   )}
-                  
+
                   <Pagination
                     current={attendancePage}
                     total={attendanceTotalPage}
@@ -879,7 +1142,6 @@ const AdminDashboard = () => {
                     onPageChange={(page) => setAttendancePage(page)}
                     colSpan={3}
                   />
-
                 </tbody>
               </table>
             </div>
@@ -887,14 +1149,17 @@ const AdminDashboard = () => {
         )}
 
         {/* T4: Invoices & Payments Section (Supports Cash vs Online paymentMethod tracking & filtering) */}
-        {activeTab === 'payments' && (
+        {activeTab === "payments" && (
           <div className="glass-premium rounded-2xl border border-gold/15 p-6 space-y-6">
-            
             {/* Filter controls */}
             <div className="flex justify-between items-center gap-4 flex-wrap">
               <div>
-                <h3 className="text-lg font-bold text-white">Payment Ledgers</h3>
-                <p className="text-xs text-gray-400 mt-1">Audit log of payments initiated and finalized.</p>
+                <h3 className="text-lg font-bold text-white">
+                  Payment Ledgers
+                </h3>
+                <p className="text-xs text-gray-400 mt-1">
+                  Audit log of payments initiated and finalized.
+                </p>
               </div>
               <div className="flex space-x-3">
                 <select
@@ -936,41 +1201,65 @@ const AdminDashboard = () => {
                 <tbody className="divide-y divide-white/5 text-sm text-gray-300">
                   {payments.length === 0 ? (
                     <tr>
-                      <td colSpan="7" className="py-8 text-center text-gray-500 text-xs">
+                      <td
+                        colSpan="7"
+                        className="py-8 text-center text-gray-500 text-xs"
+                      >
                         No transaction invoices found.
                       </td>
                     </tr>
                   ) : (
                     payments.map((p) => (
-                      <tr key={p._id} className="hover:bg-white/5 transition-colors">
+                      <tr
+                        key={p._id}
+                        className="hover:bg-white/5 transition-colors"
+                      >
                         <td className="py-4 font-semibold text-gray-300">
-                          {new Date(p.createdAt).toLocaleDateString('en-IN')}
+                          {new Date(p.createdAt).toLocaleDateString("en-IN", { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </td>
                         <td className="py-4">
                           {p.user ? (
                             <>
-                              <div className="font-bold text-white">{p.user.name}</div>
-                              <div className="text-xs text-gray-500">{p.user.mobile}</div>
+                              <div className="font-bold text-white">
+                                {p.user.name}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {p.user.mobile}
+                              </div>
                             </>
                           ) : (
-                            <span className="text-gray-500 font-light italic">Deleted User</span>
+                            <span className="text-gray-500 font-light italic">
+                              Deleted User
+                            </span>
                           )}
                         </td>
-                        <td className="py-4 font-semibold text-white capitalize">{p.membershipPlan || 'Starter'}</td>
-                        <td className="py-4 text-xs font-bold text-gold uppercase">{p.paymentMethod || 'Online Transaction'}</td>
+                        <td className="py-4 font-semibold text-white capitalize">
+                          {p.membershipPlan || "Starter"}
+                        </td>
+                        <td className="py-4 text-xs font-bold text-gold uppercase">
+                          {p.paymentMethod || "Online Transaction"}
+                        </td>
                         <td className="py-4 font-mono text-xs">
                           <div>Order: {p.razorpayOrderId}</div>
-                          {p.razorpayPaymentId && <div className="text-[10px] text-gray-500 mt-0.5">PayID: {p.razorpayPaymentId}</div>}
+                          {p.razorpayPaymentId && (
+                            <div className="text-[10px] text-gray-500 mt-0.5">
+                              PayID: {p.razorpayPaymentId}
+                            </div>
+                          )}
                         </td>
-                        <td className="py-4 font-extrabold text-white">₹{p.amount.toLocaleString()}</td>
+                        <td className="py-4 font-extrabold text-white">
+                          ₹{p.amount.toLocaleString()}
+                        </td>
                         <td className="py-4 text-center">
-                          <span className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${
-                            p.status === 'paid' 
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                              : p.status === 'failed' 
-                                ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                                : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
-                          }`}>
+                          <span
+                            className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${
+                              p.status === "paid"
+                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                : p.status === "failed"
+                                  ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                                  : "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+                            }`}
+                          >
                             {p.status}
                           </span>
                         </td>
@@ -987,7 +1276,6 @@ const AdminDashboard = () => {
                     onPageChange={(page) => setInvoicePage(page)}
                     colSpan={7}
                   />
-
                 </tbody>
               </table>
             </div>
@@ -995,9 +1283,8 @@ const AdminDashboard = () => {
         )}
 
         {/* T5: WhatsApp Renewal Reminders Board (Simplified Expiring Soon/Today/Expired Manual Scans) */}
-        {activeTab === 'reminders' && (
+        {activeTab === "reminders" && (
           <div className="space-y-6">
-            
             {/* Quick Filter controls */}
             <div className="glass-premium rounded-2xl border border-gold/15 p-6 flex flex-col md:flex-row gap-4 justify-between items-stretch">
               <div className="relative flex-1">
@@ -1025,8 +1312,13 @@ const AdminDashboard = () => {
             {/* List Table */}
             <div className="glass-premium rounded-2xl border border-gold/15 p-6 space-y-6">
               <div>
-                <h3 className="text-lg font-bold text-white">Manual WhatsApp Expiry Reminders</h3>
-                <p className="text-xs text-gray-400 mt-1">Sends manual WhatsApp notifications directly to clients. No reminder logs or history is stored.</p>
+                <h3 className="text-lg font-bold text-white">
+                  Manual WhatsApp Expiry Reminders
+                </h3>
+                <p className="text-xs text-gray-400 mt-1">
+                  Sends manual WhatsApp notifications directly to clients. No
+                  reminder logs or history is stored.
+                </p>
               </div>
 
               <div className="overflow-x-auto">
@@ -1046,18 +1338,34 @@ const AdminDashboard = () => {
                   <tbody className="divide-y divide-white/5 text-sm text-gray-300">
                     {pendingReminders.length === 0 ? (
                       <tr>
-                        <td colSpan="8" className="py-8 text-center text-gray-500 text-xs">
+                        <td
+                          colSpan="8"
+                          className="py-8 text-center text-gray-500 text-xs"
+                        >
                           No pending renewal reminders found.
                         </td>
                       </tr>
                     ) : (
                       pendingReminders.map((client) => (
-                        <tr key={client._id} className="hover:bg-white/5 transition-colors">
-                          <td className="py-4 font-bold text-white">{client.name}</td>
-                          <td className="py-4 font-semibold text-gray-300">+91 {client.mobile}</td>
-                          <td className="py-4 capitalize font-semibold text-gold">{client.plan} Plan</td>
+                        <tr
+                          key={client._id}
+                          className="hover:bg-white/5 transition-colors"
+                        >
+                          <td className="py-4 font-bold text-white">
+                            {client.name}
+                          </td>
+                          <td className="py-4 font-semibold text-gray-300">
+                            +91 {client.mobile}
+                          </td>
+                          <td className="py-4 capitalize font-semibold text-gold">
+                            {client.plan} Plan
+                          </td>
                           <td className="py-4 text-xs text-gray-400">
-                            {client.lastPaymentDate ? new Date(client.lastPaymentDate).toLocaleDateString() : 'N/A'}
+                            {client.lastPaymentDate
+                              ? new Date(
+                                  client.lastPaymentDate,
+                                ).toLocaleDateString()
+                              : "N/A"}
                           </td>
                           <td className="py-4 text-xs font-semibold text-white">
                             {new Date(client.expiryDate).toLocaleDateString()}
@@ -1066,13 +1374,15 @@ const AdminDashboard = () => {
                             {client.daysRemaining}
                           </td>
                           <td className="py-4 text-center">
-                            <span className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${
-                              client.statusKey === 'today'
-                                ? 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse'
-                                : client.statusKey === 'soon'
-                                  ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
-                                  : 'bg-gray-500/20 text-gray-400 border border-white/5'
-                            }`}>
+                            <span
+                              className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${
+                                client.statusKey === "today"
+                                  ? "bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse"
+                                  : client.statusKey === "soon"
+                                    ? "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+                                    : "bg-gray-500/20 text-gray-400 border border-white/5"
+                              }`}
+                            >
                               {client.membershipStatus}
                             </span>
                           </td>
@@ -1098,83 +1408,103 @@ const AdminDashboard = () => {
                       onPageChange={(page) => setReminderPage(page)}
                       colSpan={8}
                     />
-
                   </tbody>
                 </table>
               </div>
             </div>
-
           </div>
         )}
-
       </div>
 
       {/* EDIT MEMBER OVERLAY MODAL */}
       {editModalOpen && editingMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm overflow-y-auto">
-          <div className="glass-premium border-gold/30 rounded-3xl max-w-2xl w-full p-8 space-y-6 my-8 animate-fade-in-up">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/85 p-4 backdrop-blur-sm overflow-y-auto">
+          <div className="glass-premium border-gold/30 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 my-6 sm:my-10 animate-fade-in-up">
+            {/* Header */}
             <div className="flex justify-between items-center border-b border-gold/10 pb-4">
-              <h3 className="text-xl font-bold text-white flex items-center space-x-2">
-                <Edit3 className="h-5 w-5 text-gold" />
+              <h3 className="text-lg sm:text-xl font-bold text-white flex items-center space-x-2">
+                <Edit3 className="h-5 w-5 text-gold flex-shrink-0" />
                 <span>Modify Member Account Settings</span>
               </h3>
-              <button 
-                onClick={() => setEditModalOpen(false)}
-                className="text-gray-400 hover:text-white font-bold text-sm p-1.5"
+              <button
+                onClick={() => {
+                  setEditModalOpen(false);
+                  setMembershipConfirmed(false);
+                }}
+                className="text-gray-400 hover:text-white font-bold text-sm p-1.5 flex-shrink-0 ml-2"
               >
                 CLOSE
               </button>
             </div>
 
             <form onSubmit={handleEditSubmit} className="space-y-6">
-              
               {/* Profile fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Member Name</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                    Member Name
+                  </label>
                   <input
                     type="text"
                     required
                     value={editForm.name}
-                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, name: e.target.value })
+                    }
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Email Address</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                    Email Address
+                  </label>
                   <input
                     type="email"
                     required
                     value={editForm.email}
-                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, email: e.target.value })
+                    }
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Mobile Number</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                    Mobile Number
+                  </label>
                   <input
                     type="text"
                     required
                     value={editForm.mobile}
-                    onChange={(e) => setEditForm({ ...editForm, mobile: e.target.value })}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, mobile: e.target.value })
+                    }
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Age</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                    Age
+                  </label>
                   <input
                     type="number"
                     required
                     value={editForm.age}
-                    onChange={(e) => setEditForm({ ...editForm, age: e.target.value })}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, age: e.target.value })
+                    }
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Gender</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                    Gender
+                  </label>
                   <select
                     value={editForm.gender}
-                    onChange={(e) => setEditForm({ ...editForm, gender: e.target.value })}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, gender: e.target.value })
+                    }
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                   >
                     <option value="male">Male</option>
@@ -1183,77 +1513,152 @@ const AdminDashboard = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Emergency Contact</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                    Emergency Contact
+                  </label>
                   <input
                     type="text"
                     required
                     value={editForm.emergencyContact}
-                    onChange={(e) => setEditForm({ ...editForm, emergencyContact: e.target.value })}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        emergencyContact: e.target.value,
+                      })
+                    }
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Height (cm)</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                    Height (cm)
+                  </label>
                   <input
                     type="number"
-                    value={editForm.height || ''}
-                    onChange={(e) => setEditForm({ ...editForm, height: e.target.value })}
+                    value={editForm.height || ""}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, height: e.target.value })
+                    }
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                     placeholder="Height (cm)"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Weight (kg)</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                    Weight (kg)
+                  </label>
                   <input
                     type="number"
-                    value={editForm.weight || ''}
-                    onChange={(e) => setEditForm({ ...editForm, weight: e.target.value })}
+                    value={editForm.weight || ""}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, weight: e.target.value })
+                    }
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                     placeholder="Weight (kg)"
                   />
                 </div>
               </div>
 
+              {/* Address */}
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Address</label>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                  Address
+                </label>
                 <input
                   type="text"
                   value={editForm.address}
-                  onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, address: e.target.value })
+                  }
                   className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                 />
               </div>
 
+              {/* Confirmation Checkbox */}
+              <div className="p-4 bg-gold/5 border border-gold/20 rounded-xl">
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="relative flex-shrink-0 mt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={membershipConfirmed}
+                      onChange={(e) => setMembershipConfirmed(e.target.checked)}
+                      className="peer sr-only"
+                    />
+                    <div className="w-5 h-5 rounded-md border-2 border-gold/40 bg-black/40 peer-checked:bg-gold peer-checked:border-gold transition-all duration-200 group-hover:border-gold/70" />
+                    <svg
+                      className="absolute inset-0 w-5 h-5 text-deep-black opacity-0 peer-checked:opacity-100 transition-opacity duration-200 pointer-events-none p-0.5"
+                      viewBox="0 0 20 20" fill="currentColor"
+                    >
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 00-1.414 0L8 12.586 4.707 9.293a1 1 0 00-1.414 1.414l4 4a1 1 0 001.414 0l8-8a1 1 0 000-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs font-bold text-white uppercase tracking-wide">
+                      Enable Membership Validity Update
+                    </span>
+                    <span className="text-xs text-gray-400 leading-relaxed">
+                      Check to unlock and edit membership validity fields below.
+                    </span>
+                  </div>
+                </label>
+              </div>
+
+              {/* Fields — locked/unlocked based on membershipConfirmed */}
+              <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 transition-all duration-300 ${
+                !membershipConfirmed ? 'opacity-40 pointer-events-none select-none' : 'opacity-100'
+              }`}>
+              </div>
+
               {/* Membership adjustment fields */}
               <div className="border-t border-gold/10 pt-5 space-y-4">
-                <span className="block text-xs font-bold text-gold uppercase tracking-wider">Membership Validity Overrides</span>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <span className="block text-xs font-bold text-gold uppercase tracking-wider">
+                  Membership Validity Overrides
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Tier Level</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                      Tier Level
+                    </label>
                     <select
+                    disabled={!membershipConfirmed}
                       value={editForm.membership.plan}
-                      onChange={(e) => setEditForm({
-                        ...editForm,
-                        membership: { ...editForm.membership, plan: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          membership: {
+                            ...editForm.membership,
+                            plan: e.target.value,
+                          },
+                        })
+                      }
                       className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                     >
                       <option value="none">None</option>
                       {membershipPlans.map((plan) => (
-                        <option value={plan.id}>{plan.name}</option>
+                        <option key={plan.id} value={plan.id}>
+                          {plan.name}
+                        </option>
                       ))}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Membership Status</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                      Membership Status
+                    </label>
                     <select
+                      disabled={!membershipConfirmed}
                       value={editForm.membership.status}
-                      onChange={(e) => setEditForm({
-                        ...editForm,
-                        membership: { ...editForm.membership, status: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          membership: {
+                            ...editForm.membership,
+                            status: e.target.value,
+                          },
+                        })
+                      }
                       className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                     >
                       <option value="none">None</option>
@@ -1263,51 +1668,118 @@ const AdminDashboard = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Start Date</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                      Start Date
+                    </label>
                     <input
+                      disabled={!membershipConfirmed}
                       type="date"
                       value={editForm.membership.startDate}
-                      onChange={(e) => setEditForm({
-                        ...editForm,
-                        membership: { ...editForm.membership, startDate: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          membership: {
+                            ...editForm.membership,
+                            startDate: e.target.value,
+                          },
+                        })
+                      }
                       className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">End Date</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                      End Date
+                    </label>
                     <input
+                      disabled={!membershipConfirmed}
                       type="date"
                       value={editForm.membership.endDate}
-                      onChange={(e) => setEditForm({
-                        ...editForm,
-                        membership: { ...editForm.membership, endDate: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          membership: {
+                            ...editForm.membership,
+                            endDate: e.target.value,
+                          },
+                        })
+                      }
                       className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none"
                     />
+                  </div>
+
+                  {/* Amount Paid */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                      Amount Paid (₹)
+                    </label>
+                    <input
+                      disabled={!membershipConfirmed}
+                      type="number"
+                      value={editForm.payment.amount}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          payment: {
+                            ...editForm.payment,
+                            amount: e.target.value,
+                          },
+                        })
+                      }
+                      className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                      placeholder="e.g. 1500"
+                    />
+                  </div>
+
+                  {/* Payment Method */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                      Payment Method
+                    </label>
+                    <select
+                      disabled={!membershipConfirmed}
+                      value={editForm.payment.paymentMethod}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          payment: {
+                            ...editForm.payment,
+                            paymentMethod: e.target.value,
+                          },
+                        })
+                      }
+                      className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                    >
+                      <option value="Cash Transaction">Cash Transaction</option>
+                      <option value="Online Transaction">
+                        Online Transaction
+                      </option>
+                    </select>
                   </div>
                 </div>
               </div>
 
               {/* Submit Buttons */}
-              <div className="flex space-x-4 pt-4 border-t border-white/5">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 border-t border-white/5">
                 <button
                   type="submit"
                   disabled={actionLoading}
                   className="flex-1 py-3.5 bg-gradient-to-r from-premium-yellow to-gold text-deep-black font-bold text-xs tracking-wider rounded-xl hover:scale-[1.01] transition-transform cursor-pointer"
                 >
-                  {actionLoading ? 'SAVING OVERRIDES...' : 'SAVE MODIFICATIONS'}
+                  {actionLoading ? "SAVING OVERRIDES..." : "SAVE MODIFICATIONS"}
                 </button>
                 <button
                   type="button"
-                  onClick={() => setEditModalOpen(false)}
-                  className="px-6 py-3.5 border border-gold/20 text-gold font-bold text-xs tracking-wider rounded-xl hover:bg-gold/10 transition-colors"
+                  onClick={() => {
+                    setEditModalOpen(false);
+                    setMembershipConfirmed(false);
+                  }}
+                  className="sm:px-6 py-3.5 border border-gold/20 text-gold font-bold text-xs tracking-wider rounded-xl hover:bg-gold/10 transition-colors"
                 >
                   CANCEL
                 </button>
               </div>
-
             </form>
           </div>
         </div>
@@ -1322,7 +1794,7 @@ const AdminDashboard = () => {
                 <Users className="h-5 w-5 text-gold" />
                 <span>Create Gym Member Profile</span>
               </h3>
-              <button 
+              <button
                 onClick={() => setAddModalOpen(false)}
                 className="text-gray-400 hover:text-white font-bold text-sm p-1.5"
               >
@@ -1331,69 +1803,92 @@ const AdminDashboard = () => {
             </div>
 
             <form onSubmit={handleAddSubmit} className="space-y-6">
-              
               {/* Profile fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Member Name *</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                    Member Name *
+                  </label>
                   <input
                     type="text"
                     required
                     value={addForm.name}
-                    onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, name: e.target.value })
+                    }
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                     placeholder="Full Name"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Email Address *</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                    Email Address *
+                  </label>
                   <input
                     type="email"
                     required
                     value={addForm.email}
-                    onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, email: e.target.value })
+                    }
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                     placeholder="email@example.com"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Mobile Number *</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                    Mobile Number *
+                  </label>
                   <input
                     type="text"
                     required
                     value={addForm.mobile}
-                    onChange={(e) => setAddForm({ ...addForm, mobile: e.target.value })}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, mobile: e.target.value })
+                    }
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                     placeholder="Mobile"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Password *</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                    Password *
+                  </label>
                   <input
                     type="password"
                     required
                     value={addForm.password}
-                    onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, password: e.target.value })
+                    }
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                     placeholder="Password (min 6 chars)"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Age *</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                    Age *
+                  </label>
                   <input
                     type="number"
                     required
                     value={addForm.age}
-                    onChange={(e) => setAddForm({ ...addForm, age: e.target.value })}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, age: e.target.value })
+                    }
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none"
                     placeholder="Age"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Gender *</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                    Gender *
+                  </label>
                   <select
                     value={addForm.gender}
-                    onChange={(e) => setAddForm({ ...addForm, gender: e.target.value })}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, gender: e.target.value })
+                    }
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none"
                   >
                     <option value="male">Male</option>
@@ -1402,42 +1897,61 @@ const AdminDashboard = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Height (cm)</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                    Height (cm)
+                  </label>
                   <input
                     type="number"
                     value={addForm.height}
-                    onChange={(e) => setAddForm({ ...addForm, height: e.target.value })}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, height: e.target.value })
+                    }
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none"
                     placeholder="Height (cm)"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Weight (kg)</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                    Weight (kg)
+                  </label>
                   <input
                     type="number"
                     value={addForm.weight}
-                    onChange={(e) => setAddForm({ ...addForm, weight: e.target.value })}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, weight: e.target.value })
+                    }
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none"
                     placeholder="Weight (kg)"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Emergency Contact *</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                    Emergency Contact *
+                  </label>
                   <input
                     type="text"
                     required
                     value={addForm.emergencyContact}
-                    onChange={(e) => setAddForm({ ...addForm, emergencyContact: e.target.value })}
+                    onChange={(e) =>
+                      setAddForm({
+                        ...addForm,
+                        emergencyContact: e.target.value,
+                      })
+                    }
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none"
                     placeholder="Emergency Contact"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Address</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                    Address
+                  </label>
                   <input
                     type="text"
                     value={addForm.address}
-                    onChange={(e) => setAddForm({ ...addForm, address: e.target.value })}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, address: e.target.value })
+                    }
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none font-sans"
                     placeholder="Address"
                   />
@@ -1446,34 +1960,52 @@ const AdminDashboard = () => {
 
               {/* Membership details */}
               <div className="border-t border-gold/10 pt-5 space-y-4">
-                <span className="block text-xs font-bold text-gold uppercase tracking-wider">Membership Settings</span>
-                
+                <span className="block text-xs font-bold text-gold uppercase tracking-wider">
+                  Membership Settings
+                </span>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Membership Plan *</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                      Membership Plan *
+                    </label>
                     <select
                       value={addForm.membership.plan}
-                      onChange={(e) => setAddForm({
-                        ...addForm,
-                        membership: { ...addForm.membership, plan: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setAddForm({
+                          ...addForm,
+                          membership: {
+                            ...addForm.membership,
+                            plan: e.target.value,
+                          },
+                        })
+                      }
                       className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                     >
                       <option value="none">None</option>
                       {membershipPlans.map((plan) => (
-                        <option value={plan.id}>{plan.name}</option>
+                        <option key={plan.id} value={plan.id}>
+                          {plan.name}
+                        </option>
                       ))}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Membership Status *</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                      Membership Status *
+                    </label>
                     <select
                       value={addForm.membership.status}
-                      onChange={(e) => setAddForm({
-                        ...addForm,
-                        membership: { ...addForm.membership, status: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setAddForm({
+                          ...addForm,
+                          membership: {
+                            ...addForm.membership,
+                            status: e.target.value,
+                          },
+                        })
+                      }
                       className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                     >
                       <option value="none">None</option>
@@ -1483,27 +2015,41 @@ const AdminDashboard = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Start Date</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                      Start Date
+                    </label>
                     <input
                       type="date"
                       value={addForm.membership.startDate}
-                      onChange={(e) => setAddForm({
-                        ...addForm,
-                        membership: { ...addForm.membership, startDate: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setAddForm({
+                          ...addForm,
+                          membership: {
+                            ...addForm.membership,
+                            startDate: e.target.value,
+                          },
+                        })
+                      }
                       className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">End Date</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                      End Date
+                    </label>
                     <input
                       type="date"
                       value={addForm.membership.endDate}
-                      onChange={(e) => setAddForm({
-                        ...addForm,
-                        membership: { ...addForm.membership, endDate: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setAddForm({
+                          ...addForm,
+                          membership: {
+                            ...addForm.membership,
+                            endDate: e.target.value,
+                          },
+                        })
+                      }
                       className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none"
                     />
                   </div>
@@ -1512,34 +2058,52 @@ const AdminDashboard = () => {
 
               {/* Payment Details */}
               <div className="border-t border-gold/10 pt-5 space-y-4">
-                <span className="block text-xs font-bold text-gold uppercase tracking-wider">Initial Payment Logs</span>
-                
+                <span className="block text-xs font-bold text-gold uppercase tracking-wider">
+                  Initial Payment Logs
+                </span>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Amount Paid (₹)</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                      Amount Paid (₹)
+                    </label>
                     <input
                       type="number"
                       value={addForm.payment.amount}
-                      onChange={(e) => setAddForm({
-                        ...addForm,
-                        payment: { ...addForm.payment, amount: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setAddForm({
+                          ...addForm,
+                          payment: {
+                            ...addForm.payment,
+                            amount: e.target.value,
+                          },
+                        })
+                      }
                       className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                       placeholder="e.g. 1500"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Payment Method</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
+                      Payment Method
+                    </label>
                     <select
                       value={addForm.payment.paymentMethod}
-                      onChange={(e) => setAddForm({
-                        ...addForm,
-                        payment: { ...addForm.payment, paymentMethod: e.target.value }
-                      })}
+                      onChange={(e) =>
+                        setAddForm({
+                          ...addForm,
+                          payment: {
+                            ...addForm.payment,
+                            paymentMethod: e.target.value,
+                          },
+                        })
+                      }
                       className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                     >
                       <option value="Cash Transaction">Cash Transaction</option>
-                      <option value="Online Transaction">Online Transaction</option>
+                      <option value="Online Transaction">
+                        Online Transaction
+                      </option>
                     </select>
                   </div>
                 </div>
@@ -1552,7 +2116,7 @@ const AdminDashboard = () => {
                   disabled={actionLoading}
                   className="flex-1 py-3.5 bg-gradient-to-r from-premium-yellow to-gold text-deep-black font-bold text-xs tracking-wider rounded-xl hover:scale-[1.01] transition-transform cursor-pointer"
                 >
-                  {actionLoading ? 'CREATING CLIENT...' : 'CREATE NEW MEMBER'}
+                  {actionLoading ? "CREATING CLIENT..." : "CREATE NEW MEMBER"}
                 </button>
                 <button
                   type="button"
@@ -1562,12 +2126,10 @@ const AdminDashboard = () => {
                   CANCEL
                 </button>
               </div>
-
             </form>
           </div>
         </div>
       )}
-
     </div>
   );
 };
