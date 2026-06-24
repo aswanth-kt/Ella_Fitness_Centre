@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { 
   CreditCard, 
   CheckCircle, AlertTriangle, AlertCircle, Edit3, Loader, CheckSquare,
+  Receipt,
 } from 'lucide-react';
 import axios from '../api/axios.js';
 import { gym_first_name, gym_full_name } from '../constants/constants';
@@ -11,6 +12,7 @@ import gymImage from '../assets/banner/bannerImage.png'
 import { membershipPlans } from '../constants/membershipPlans.js';
 import { healthIssuesList } from '../constants/healthIssues.js';
 import GymTermsConditions from '../components/GymTermsConditions.jsx';
+import PaymentReceiptModal from '../components/PaymentReceiptModal.jsx';
 
 const ClientDashboard = () => {
   const { user, updateProfile, refreshUser } = useContext(AuthContext);
@@ -47,6 +49,9 @@ const ClientDashboard = () => {
   const [showRenewalModal, setShowRenewalModal] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState('');
   const [renewalError, setRenewalError] = useState('');
+
+  // Receipt states
+  const [showReceipt, setShowReceipt] = useState(false);
 
   // Initialize edit form when user loads
   useEffect(() => {
@@ -343,7 +348,6 @@ const ClientDashboard = () => {
                     <CreditCard className="h-5 w-5" />
                   </div>
                 </div>
-
                 <div className="mt-4 border-t border-white/5 pt-4">
                   {lastPayment ? (
                     <div className="flex justify-between items-center text-xs">
@@ -353,10 +357,30 @@ const ClientDashboard = () => {
                           {new Date(lastPayment.paidAt).toLocaleDateString('en-IN')}
                         </span>
                       </div>
-                      <div className="text-right">
+                      <div className="flex items-center gap-2">
                         <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full font-bold uppercase">
                           PAID
                         </span>
+                        <button
+                          onClick={() => setShowReceipt(true)}
+                          className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full border transition-all duration-150 cursor-pointer"
+                          style={{
+                            backgroundColor: 'rgba(225,29,72,0.12)',
+                            borderColor: 'rgba(225,29,72,0.25)',
+                            color: '#F43F5E',
+                          }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.backgroundColor = 'rgba(225,29,72,0.22)';
+                            e.currentTarget.style.borderColor = 'rgba(225,29,72,0.45)';
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.backgroundColor = 'rgba(225,29,72,0.12)';
+                            e.currentTarget.style.borderColor = 'rgba(225,29,72,0.25)';
+                          }}
+                        >
+                          <Receipt className="h-3 w-3" />
+                          Receipt
+                        </button>
                       </div>
                     </div>
                   ) : (
@@ -366,6 +390,24 @@ const ClientDashboard = () => {
               </div>
 
             </div>
+
+            {/* Show the last receipt */}
+            {showReceipt && (
+              <PaymentReceiptModal
+                isOpen={showReceipt}
+                onClose={() => setShowReceipt(false)}
+                receiptData={{
+                  invoiceNumber: lastPayment?.invoiceNo,
+                  name: user?.name,
+                  membershipPlan: user?.membership?.plan,
+                  amount: `₹${lastPayment?.amount}`,
+                  startDate: new Date(user?.membership?.startDate).toLocaleDateString('en-IN'),
+                  endDate: new Date(user?.membership?.endDate).toLocaleDateString('en-IN'),
+                  paymentMethod: lastPayment?.paymentMethod,
+                  paymentDate: new Date(lastPayment?.paidAt).toLocaleDateString('en-IN'),
+                }}
+              />
+            )}
 
             {/* Attendance & Payment Logs Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
