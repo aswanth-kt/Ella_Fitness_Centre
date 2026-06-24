@@ -21,7 +21,7 @@ const gymRules = [
     id: "02",
     title: "Personal Towel",
     description:
-      "All members must bring and use a personal towel during workouts to help maintain hygiene and cleanliness throughout the facility.",
+      "All members must bring and use a personal towel while working out. To maintain hygiene and cleanliness, members must take their towel home after each workout session and must not leave it in the facility.",
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         {/* Horizontal rail at top, towel hanging down with fold lines */}
