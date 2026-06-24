@@ -490,7 +490,7 @@ const ClientDashboard = () => {
                   <p className="text-xs text-gray-400 mt-1">Receipts and logs of memberships purchased.</p>
                 </div>
 
-                <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                <div className="space-y-4 max-h-[350px] md:max-h-[500px] overflow-y-auto pr-2">
                   {payments.length === 0 ? (
                     <div className="text-center py-6 text-gray-500 text-xs">
                       No invoices recorded.
