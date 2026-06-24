@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { data, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { 
   CreditCard, 
@@ -7,12 +7,13 @@ import {
   Receipt,
 } from 'lucide-react';
 import axios from '../api/axios.js';
-import { gym_first_name, gym_full_name } from '../constants/constants';
+import { attendence_pagination_limit, gym_first_name, gym_full_name } from '../constants/constants';
 import gymImage from '../assets/banner/bannerImage.png'
 import { membershipPlans } from '../constants/membershipPlans.js';
 import { healthIssuesList } from '../constants/healthIssues.js';
 import GymTermsConditions from '../components/GymTermsConditions.jsx';
 import PaymentReceiptModal from '../components/PaymentReceiptModal.jsx';
+import Pagination from '../components/Pagination.jsx';
 
 const ClientDashboard = () => {
   const { user, updateProfile, refreshUser } = useContext(AuthContext);
@@ -24,6 +25,10 @@ const ClientDashboard = () => {
   const [attendance, setAttendance] = useState({ summary: { presentDays: 0, absentDays: 0, attendancePercentage: 0 }, history: [] });
   const [loading, setLoading] = useState(true);
   const [successMsg, setSuccessMsg] = useState('');
+
+  // Pagination
+  const [attendancePage, setattendancePage] = useState(1);
+  const [attendanceTotalPage, setAttendanceTotalPage] = useState(1);
 
   // Editing profile states
   const [isEditing, setIsEditing] = useState(false);
@@ -86,11 +91,18 @@ const ClientDashboard = () => {
       setLoading(true);
       const [payRes, attRes] = await Promise.all([
         axios.get('/payments/my-payments'),
-        axios.get('/attendance/my-attendance')
+        axios.get('/attendance/my-attendance', {
+          params: {
+            attendancePage
+          }
+        })
       ]);
 
       setPayments(payRes.data);
       setAttendance(attRes.data);
+      setattendancePage(attRes.data.page)
+      setAttendanceTotalPage(attRes.data.totalAttendancePage)
+
     } catch (err) {
       console.error('Error fetching dashboard info:', err);
     } finally {
@@ -102,7 +114,7 @@ const ClientDashboard = () => {
     if (user) {
       fetchDashboardData();
     }
-  }, [user]);
+  }, [user, attendancePage]);
 
   // Dynamically load Razorpay SDK script
   const loadRazorpayScript = () => {
@@ -454,8 +466,20 @@ const ClientDashboard = () => {
                           </tr>
                         ))
                       )}
+
+                      <Pagination 
+                        current={attendancePage}
+                        total={attendanceTotalPage}
+                        totalItems={attendance.history.length}
+                        item="attendence"
+                        perPage={attendence_pagination_limit}
+                        onPageChange={(page) => setattendancePage(page)}
+                        colSpan={3}
+                      />
+
                     </tbody>
                   </table>
+
                 </div>
               </div>
 

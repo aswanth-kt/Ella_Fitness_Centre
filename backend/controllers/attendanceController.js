@@ -13,7 +13,20 @@ const normalizeDate = (dateStr) => {
 // @route   GET /api/attendance/my-attendance
 // @access  Private
 export const getMyAttendance = async (req, res) => {
+  const { attendancePage } = req.query;
   try {
+    const page = Number(attendancePage);
+    const limit = attendence_pagination_limit;
+    const skip = (page - 1) * limit;
+
+    const attendanceHistory = await Attendance.find({ userId: req.user._id })
+    .sort({ date: -1 })
+    .skip(skip)
+    .limit(limit);
+
+    const totalAttendance = await Attendance.countDocuments({ userId: req.user._id });
+    const totalAttendancePage = Math.ceil(totalAttendance/limit);
+
     const history = await Attendance.find({ userId: req.user._id }).sort({ date: -1 });
 
     let presentDays = 0;
@@ -31,7 +44,7 @@ export const getMyAttendance = async (req, res) => {
     const percentage = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
 
     // Map history to match expectations: Date | Session Attended | Status
-    const formattedHistory = history.map(record => ({
+    const formattedHistory = attendanceHistory.map(record => ({
       _id: record._id,
       date: record.date,
       session: record.status === 'Present' ? record.session : 'Absent',
@@ -44,7 +57,9 @@ export const getMyAttendance = async (req, res) => {
         absentDays,
         attendancePercentage: percentage
       },
-      history: formattedHistory
+      history: formattedHistory,
+      page,
+      totalAttendancePage,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
