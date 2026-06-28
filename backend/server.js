@@ -11,6 +11,8 @@ import authRoutes from './routes/authRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import attendanceRoutes from './routes/attendanceRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import reminderRoutes from './routes/reminderRoutes.js';
+import './cron/membershipReminder.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import { appLimiter } from './middleware/rateLimitMiddleware.js';
 
@@ -31,7 +33,7 @@ const allowedOrigins = [
 ].filter(Boolean);
 
 app.use(cors({
-  origin: function(origin, callback) {
+  origin: function (origin, callback) {
     // Allow requests with no origin (e.g. mobile apps, Postman)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
@@ -79,6 +81,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/reminder', reminderRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {
