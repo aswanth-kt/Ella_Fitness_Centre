@@ -3,7 +3,7 @@ import Payment from '../models/Payment.js';
 import Attendance from '../models/Attendance.js';
 import Notification from '../models/Notification.js';
 import { sendWhatsAppMessage } from '../services/whatsappService.js';
-import { gym_full_name } from '../../frontend/src/constants/constants.js';
+import { gym_first_name, gym_full_name } from '../../frontend/src/constants/constants.js';
 import { invoice_pagination_limit, members_pagination_limit, reminder_pagination_limit } from '../const/constants.js';
 
 // Helper to normalize dates
@@ -495,8 +495,8 @@ export const getPendingRemindersList = async (req, res) => {
     const today = getStartOfDay(new Date());
 
     const clients = await User.find({ role: 'client', 'membership.plan': { $ne: 'none' } })
-    .skip(skip)
-    .limit(limit);
+    // .skip(skip)
+    // .limit(limit);
 
     const list = [];
 
@@ -569,7 +569,7 @@ export const getPendingRemindersList = async (req, res) => {
   }
 };
 
-// @desc    Admin: Send manual mock WhatsApp reminder to member
+// @desc    Admin: Send manual WhatsApp reminder to member
 // @route   POST /api/admin/reminders/send
 // @access  Private/Admin
 export const sendManualReminder = async (req, res) => {
@@ -588,14 +588,12 @@ export const sendManualReminder = async (req, res) => {
 
     const message = `Hello ${client.name},\n\nYour ${gym_full_name} membership (${client.membership.plan.toUpperCase()}) ${
       daysLeft < 0 ? 'expired on' : daysLeft === 0 ? 'expires today' : 'will expire on'
-    } ${client.membership.endDate.toLocaleDateString()}.\n\nPlease renew to continue your training sessions.\n\nThank you,\nOlympus Team`;
+    } ${client.membership.endDate.toLocaleDateString()}.\n\nPlease renew to continue your training sessions.\n\nThank you,\n${gym_first_name} Team`;
 
-    console.log('====================================================');
-    console.log(`[MANUAL WHATSAPP REMINDER] Dispatched API to +91${client.mobile}`);
-    console.log(`Message:\n${message}`);
-    console.log('====================================================');
+    await sendWhatsAppMessage(client.mobile, message);
 
     res.json({ message: `Manual WhatsApp renewal reminder sent successfully to ${client.name}!` });
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

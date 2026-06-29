@@ -4,7 +4,7 @@ import Notification from '../models/Notification.js';
 import { sendWhatsAppMessage } from '../services/whatsappService.js';
 
 // Schedule: '0 8 * * *' (every day at 8:00 AM)
-cron.schedule('0 8 * * *', async () => {
+cron.schedule('* * * * *', async () => {
   console.log('Cron started: membership reminder check');
   try {
     const users = await User.find({

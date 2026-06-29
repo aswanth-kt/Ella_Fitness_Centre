@@ -19,6 +19,8 @@ export const sendWhatsAppMessage = async (phoneNumber, message) => {
         text: { body: message }
       },
       {
+        baseURL: url,
+        withCredentials: true,
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
