@@ -3,6 +3,7 @@ import {
   Shield, Users, CheckCircle, CheckCircle2, AlertTriangle, Calendar, 
   IndianRupee, Search, Edit3, Trash2, Loader, 
   RefreshCw, AlertCircle, Plus, CreditCard,
+  Check,
 } from 'lucide-react';
 import axios from '../api/axios.js';
 import { 
@@ -41,6 +42,9 @@ const AdminDashboard = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Manual whatsapp reminder
+  const [sendManualWhatsAppIds, setSendManualWhatsAppIds] = useState(new Set());
 
   // Filtering & Search
   const [memberSearch, setMemberSearch] = useState('');
@@ -227,8 +231,13 @@ const AdminDashboard = () => {
     setSuccessMsg('');
     try {
       const { data } = await axios.post('/admin/reminders/send', { userId });
+
+      if (data.success) {
+        setSendManualWhatsAppIds((prev) => new Set(prev).add(userId))
+      }
       setSuccessMsg(data.message);
       setTimeout(() => setSuccessMsg(''), 4000);
+
     } catch (err) {
       setErrorMsg(err.response?.data?.message || 'Failed to dispatch manual alert.');
     } finally {
@@ -1316,8 +1325,7 @@ const AdminDashboard = () => {
                   Manual WhatsApp Expiry Reminders
                 </h3>
                 <p className="text-xs text-gray-400 mt-1">
-                  Sends manual WhatsApp notifications directly to clients. No
-                  reminder logs or history is stored.
+                  Sends manual WhatsApp notifications directly to clients
                 </p>
               </div>
 
@@ -1364,11 +1372,11 @@ const AdminDashboard = () => {
                             {client.lastPaymentDate
                               ? new Date(
                                   client.lastPaymentDate,
-                                ).toLocaleDateString()
+                                ).toLocaleDateString("en-IN")
                               : "N/A"}
                           </td>
                           <td className="py-4 text-xs font-semibold text-white">
-                            {new Date(client.expiryDate).toLocaleDateString()}
+                            {new Date(client.expiryDate).toLocaleDateString("en-IN")}
                           </td>
                           <td className="py-4 text-center font-mono font-bold text-sm">
                             {client.daysRemaining}
@@ -1390,9 +1398,20 @@ const AdminDashboard = () => {
                             <button
                               disabled={actionLoading}
                               onClick={() => sendManualWhatsApp(client._id)}
-                              className="px-4 py-2 bg-gradient-to-r from-premium-yellow to-gold text-deep-black font-extrabold text-[10px] tracking-wider rounded-xl hover:scale-105 active:scale-95 transition-all cursor-pointer uppercase shadow-md shadow-gold/15"
+                              className={`px-4 py-2 font-extrabold text-[10px] tracking-wider rounded-xl hover:scale-105 active:scale-95 transition-all cursor-pointer uppercase shadow-md ${
+                                sendManualWhatsAppIds.has(client._id)
+                                  ? "bg-gradient-to-r from-emerald-400 to-green-600 text-white shadow-green-500/20"
+                                  : "bg-gradient-to-r from-premium-yellow to-gold text-deep-black shadow-gold/15"
+                              }`}
                             >
-                              Send WhatsApp Reminder
+                              {sendManualWhatsAppIds.has(client._id) ? (
+                                <span className="flex items-center gap-1">
+                                  <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                                  Sent
+                                </span>
+                              ) : (
+                                "Send WhatsApp Reminder"
+                              )}
                             </button>
                           </td>
                         </tr>
@@ -1787,7 +1806,7 @@ const AdminDashboard = () => {
 
       {/* ADD NEW MEMBER OVERLAY MODAL */}
       {addModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/85 p-4 backdrop-blur-sm overflow-y-auto">
           <div className="glass-premium border-gold/30 rounded-3xl max-w-2xl w-full p-8 space-y-6 my-8 animate-fade-in-up">
             <div className="flex justify-between items-center border-b border-gold/10 pb-4">
               <h3 className="text-xl font-bold text-white flex items-center space-x-2">

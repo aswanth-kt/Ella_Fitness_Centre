@@ -1,51 +1,34 @@
-import { gym_first_name } from '../../frontend/src/constants/constants.js';
-import Notification from '../models/Notification.js';
+import axios from 'axios';
 
-/**
- * Simulates sending a WhatsApp notification.
- * In production, this would integrate with Twilio or Meta's Cloud API.
- */
-export const sendWhatsAppMessage = async ({ user, type, templateData }) => {
-  const { name, mobile, expiryDate, daysLeft } = templateData;
-  
-  let message = '';
-  
-  switch (type) {
-    case 'expiry_warning':
-      message = `Hello ${name},\n\nYour gym membership will expire on ${expiryDate}.\nRemaining Days: ${daysLeft}\n\nPlease renew your membership to continue uninterrupted access.\n\nThank you.`;
-      break;
-    case 'due_today':
-      message = `Hello ${name},\n\nYour gym membership is expiring TODAY (${expiryDate}).\n\nPlease renew immediately to avoid suspension of facilities.\n\nThank you.`;
-      break;
-    case 'overdue':
-      message = `Hello ${name},\n\nYour gym membership expired on ${expiryDate}.\n\nAccess is currently restricted. Please renew to resume your training sessions.\n\nThank you.`;
-      break;
-    case 'monthly_fee':
-      message = `Hello ${name},\n\nThis is your monthly gym fee receipt and standing confirmation. Stay fit!\n\nThank you.`;
-      break;
-    default:
-      message = `Hello ${name},\n\nThis is a notification from your ${gym_first_name} Gym Team.`;
+export const sendWhatsAppMessage = async (phoneNumber, message) => {
+  const url = process.env.WHATSAPP_API_URL;
+  const token = process.env.WHATSAPP_API_TOKEN;
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+
+  if (!url || !token || !phoneNumberId) {
+    throw new Error('WhatsApp API configuration is missing in environment variables.');
   }
 
-  console.log('====================================================');
-  console.log(`[WHATSAPP REMINDER SERVICE] Sending API Request to +91${mobile}`);
-  console.log(`Type: ${type}`);
-  console.log(`Message:\n${message}`);
-  console.log('====================================================');
-
   try {
-    // Database logs disabled: "No reminder history should be stored. No WhatsApp logs should be stored."
-    // const notification = await Notification.create({
-    //   user: user._id,
-    //   type,
-    //   status: 'sent',
-    //   messageContent: message,
-    //   sentAt: new Date()
-    // });
-
-    return { success: true, notification: { user: user._id, type, status: 'sent', messageContent: message, sentAt: new Date() } };
+    const response = await axios.post(
+      url,
+      {
+        messaging_product: 'whatsapp',
+        to: phoneNumber,
+        type: 'text',
+        text: { body: message }
+      },
+      {
+        baseURL: url,
+        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    return response.data;
   } catch (error) {
-    console.error('Error logging notification to DB:', error.message);
-    return { success: false, error: error.message };
+    throw new Error(error.response?.data?.error?.message || error.message || 'Failed to send WhatsApp message');
   }
 };
