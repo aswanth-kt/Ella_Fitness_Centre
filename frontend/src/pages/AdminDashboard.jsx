@@ -1787,7 +1787,7 @@ const AdminDashboard = () => {
 
       {/* ADD NEW MEMBER OVERLAY MODAL */}
       {addModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/85 p-4 backdrop-blur-sm overflow-y-auto">
           <div className="glass-premium border-gold/30 rounded-3xl max-w-2xl w-full p-8 space-y-6 my-8 animate-fade-in-up">
             <div className="flex justify-between items-center border-b border-gold/10 pb-4">
               <h3 className="text-xl font-bold text-white flex items-center space-x-2">
