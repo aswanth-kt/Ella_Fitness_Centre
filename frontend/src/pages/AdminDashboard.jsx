@@ -3,6 +3,7 @@ import {
   Shield, Users, CheckCircle, CheckCircle2, AlertTriangle, Calendar, 
   IndianRupee, Search, Edit3, Trash2, Loader, 
   RefreshCw, AlertCircle, Plus, CreditCard,
+  Check,
 } from 'lucide-react';
 import axios from '../api/axios.js';
 import { 
@@ -41,6 +42,9 @@ const AdminDashboard = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Manual whatsapp reminder
+  const [sendManualWhatsAppIds, setSendManualWhatsAppIds] = useState(new Set());
 
   // Filtering & Search
   const [memberSearch, setMemberSearch] = useState('');
@@ -227,8 +231,13 @@ const AdminDashboard = () => {
     setSuccessMsg('');
     try {
       const { data } = await axios.post('/admin/reminders/send', { userId });
+
+      if (data.success) {
+        setSendManualWhatsAppIds((prev) => new Set(prev).add(userId))
+      }
       setSuccessMsg(data.message);
       setTimeout(() => setSuccessMsg(''), 4000);
+
     } catch (err) {
       setErrorMsg(err.response?.data?.message || 'Failed to dispatch manual alert.');
     } finally {
@@ -1316,8 +1325,7 @@ const AdminDashboard = () => {
                   Manual WhatsApp Expiry Reminders
                 </h3>
                 <p className="text-xs text-gray-400 mt-1">
-                  Sends manual WhatsApp notifications directly to clients. No
-                  reminder logs or history is stored.
+                  Sends manual WhatsApp notifications directly to clients
                 </p>
               </div>
 
@@ -1390,9 +1398,20 @@ const AdminDashboard = () => {
                             <button
                               disabled={actionLoading}
                               onClick={() => sendManualWhatsApp(client._id)}
-                              className="px-4 py-2 bg-gradient-to-r from-premium-yellow to-gold text-deep-black font-extrabold text-[10px] tracking-wider rounded-xl hover:scale-105 active:scale-95 transition-all cursor-pointer uppercase shadow-md shadow-gold/15"
+                              className={`px-4 py-2 font-extrabold text-[10px] tracking-wider rounded-xl hover:scale-105 active:scale-95 transition-all cursor-pointer uppercase shadow-md ${
+                                sendManualWhatsAppIds.has(client._id)
+                                  ? "bg-gradient-to-r from-emerald-400 to-green-600 text-white shadow-green-500/20"
+                                  : "bg-gradient-to-r from-premium-yellow to-gold text-deep-black shadow-gold/15"
+                              }`}
                             >
-                              Send WhatsApp Reminder
+                              {sendManualWhatsAppIds.has(client._id) ? (
+                                <span className="flex items-center gap-1">
+                                  <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                                  Sent
+                                </span>
+                              ) : (
+                                "Send WhatsApp Reminder"
+                              )}
                             </button>
                           </td>
                         </tr>

@@ -574,11 +574,14 @@ export const getPendingRemindersList = async (req, res) => {
 // @access  Private/Admin
 export const sendManualReminder = async (req, res) => {
   const { userId } = req.body;
+  if (!userId) {
+    return res.status(400).json({ success: false, message: 'Client ID not found' });
+  }
 
   try {
     const client = await User.findById(userId);
     if (!client) {
-      return res.status(404).json({ message: 'Client not found' });
+      return res.status(404).json({ success: false, message: 'Client not found' });
     }
 
     const today = getStartOfDay(new Date());
@@ -586,15 +589,23 @@ export const sendManualReminder = async (req, res) => {
     const timeDiff = endDate.getTime() - today.getTime();
     const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
+    // const message = `Hello ${client.name},\n\nYour ${gym_full_name} membership (${client.membership.plan.toUpperCase()}) ${
+    //   daysLeft < 0 ? 'expired on' : daysLeft === 0 ? 'expires today' : 'will expire on'
+    // } ${client.membership.endDate.toLocaleDateString()}.\n\nPlease renew to continue your training sessions.\n\nThank you,\n${gym_first_name} Team`;
+
     const message = `Hello ${client.name},\n\nYour ${gym_full_name} membership (${client.membership.plan.toUpperCase()}) ${
-      daysLeft < 0 ? 'expired on' : daysLeft === 0 ? 'expires today' : 'will expire on'
-    } ${client.membership.endDate.toLocaleDateString()}.\n\nPlease renew to continue your training sessions.\n\nThank you,\n${gym_first_name} Team`;
+      daysLeft < 0 ? 'expired on' : daysLeft === 0 ? 'expires today,' : 'will expire on'
+    } ${client.membership.endDate.toLocaleDateString()}.\n\nPlease renew at your earliest convenience to continue your training sessions without interruption.\n\nIf you have already completed the payment, please disregard this message.\n\nThank you,\nTeam ${gym_first_name}`;
 
     await sendWhatsAppMessage(client.mobile, message);
+    console.log(`Manual WhatsApp renewal reminder sent successfully to ${client.name}!`)
 
-    res.json({ message: `Manual WhatsApp renewal reminder sent successfully to ${client.name}!` });
+    res.json({ 
+      success: true,
+      message: `Manual WhatsApp renewal reminder sent successfully to ${client.name}!`
+    });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };

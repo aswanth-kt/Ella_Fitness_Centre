@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import { sendWhatsAppMessage } from '../services/whatsappService.js';
+import { gym_first_name } from '../../frontend/src/constants/constants.js';
 
 // Schedule: '0 8 * * *' (every day at 8:00 AM)
 cron.schedule('* * * * *', async () => {
@@ -25,14 +26,14 @@ cron.schedule('* * * * *', async () => {
 
       const daysRemaining = Math.round((end - today) / (1000 * 60 * 60 * 24));
 
-      if (![0, 3, 7].includes(daysRemaining)) {
+      if (![-2, 0, 5].includes(daysRemaining)) {
         continue;
       }
 
       let reminderType;
-      if (daysRemaining === 7) reminderType = 'expiry_warning';
-      else if (daysRemaining === 3) reminderType = 'expiry_warning';
+      if (daysRemaining === 5) reminderType = 'expiry_warning';
       else if (daysRemaining === 0) reminderType = 'due_today';
+      else if (daysRemaining === -2) reminderType = 'overdue';
 
       const startOfToday = new Date();
       startOfToday.setHours(0, 0, 0, 0);
@@ -58,12 +59,13 @@ cron.schedule('* * * * *', async () => {
       });
 
       let message = '';
-      if (daysRemaining === 7) {
-        message = `Hello ${user.name},\n\nYour gym membership will expire in 7 days on ${formattedDate}.\n\nPlease renew your membership before the expiry date to continue\nenjoying uninterrupted access.\n\nThank you.`;
-      } else if (daysRemaining === 3) {
-        message = `Hello ${user.name},\n\nYour gym membership will expire in only 3 days on ${formattedDate}.\n\nPlease renew it as soon as possible.\n\nThank you.`;
+
+      if (daysRemaining === 5) {
+        message = `Hi ${user.name},\n\nThis is a friendly reminder that your gym membership will expire in 5 days, on ${formattedDate}.\n\nTo avoid any interruption to your workouts, please renew your membership before the expiry date.\n\nIf you have already completed the payment, please disregard this message.\n\nThank you for being a valued member.\n\nTeam ${gym_first_name}`;
       } else if (daysRemaining === 0) {
-        message = `Hello ${user.name},\n\nYour gym membership expires today.\n\nTo continue your workouts without interruption,\nplease renew your membership.\n\nThank you.`;
+        message = `Hi ${user.name},\n\nYour gym membership expires today, ${formattedDate}.\n\nPlease renew your membership as soon as possible to continue enjoying uninterrupted access to the gym.\n\nIf you have already completed the payment, please disregard this message.\n\nThank you for being a valued member.\n\nTeam ${gym_first_name}`;
+      } else if (daysRemaining === -2) {
+        message = `Hi ${user.name},\n\nYour gym membership expired on ${formattedDate}, and gym access is currently suspended.\n\nPlease renew your membership at your earliest convenience to resume your workouts.\n\nIf you have already completed the payment, please disregard this message.\n\nThank you for being a valued member.\n\nTeam ${gym_first_name}`;
       }
 
       try {
