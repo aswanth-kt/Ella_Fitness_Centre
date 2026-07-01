@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { data, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { 
   CreditCard, 
@@ -14,6 +14,8 @@ import { healthIssuesList } from '../constants/healthIssues.js';
 import GymTermsConditions from '../components/GymTermsConditions.jsx';
 import PaymentReceiptModal from '../components/PaymentReceiptModal.jsx';
 import Pagination from '../components/Pagination.jsx';
+import { countryCodes } from '../constants/countryCodes.js';
+import { validateAge, validateCountryCode, validateMobileNumber, validatePassword } from '../helpers/validators.js';
 
 const ClientDashboard = () => {
   const { user, updateProfile, refreshUser } = useContext(AuthContext);
@@ -34,6 +36,7 @@ const ClientDashboard = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',
+    countryCode: '',
     mobile: '',
     age: '',
     gender: 'male',
@@ -63,6 +66,7 @@ const ClientDashboard = () => {
     if (user) {
       setEditForm({
         name: user.name || '',
+        countryCode: user.countryCode || '',
         mobile: user.mobile || '',
         age: user.age || '',
         gender: user.gender || 'male',
@@ -203,15 +207,42 @@ const ClientDashboard = () => {
     setEditError('');
     setEditLoading(true);
 
-    const result = await updateProfile(editForm);
-    setEditLoading(false);
+    try {
+      // Form validator
+      const cc = validateCountryCode(editForm.countryCode);
+      const mob = validateMobileNumber(editForm.mobile);
+      const pw = validatePassword(editForm.password);
+      const ag = validateAge(editForm.age)
 
-    if (result.success) {
-      setIsEditing(false);
-      setSuccessMsg('Profile updated successfully!');
-      setTimeout(() => setSuccessMsg(''), 4000);
-    } else {
-      setEditError(result.message);
+      if (!cc.valid) return setEditError(cc.message)
+      if (!mob.valid) return setEditError(mob.message)
+      if (editForm.password && !pw.valid) return setEditError(pw.message)
+      if (!ag.valid) return setEditError(ag.message)
+
+      if (hasHealthIssue && !editForm.healthIssues) {
+        setEditError('Please select a health issue')
+        return;
+      };
+
+      if (hasHealthIssue && editForm.healthIssues === 'other' && !editForm.healthDescription) {
+        setEditError("Please fill out health description")
+        return;
+      };
+
+      const result = await updateProfile(editForm);
+  
+      if (result.success) {
+        setIsEditing(false);
+        setSuccessMsg('Profile updated successfully!');
+        setTimeout(() => setSuccessMsg(''), 4000);
+      } else {
+        setEditError(result.message);
+      }
+    } catch (error) {
+      setEditError(error.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setEditLoading(false)
+      console.log("msg:", editError)
     }
   };
 
@@ -238,6 +269,12 @@ const ClientDashboard = () => {
             <span>{successMsg}</span>
           </div>
         )}
+        {/* {setEditError && (
+          <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl p-4 mb-6 flex items-start space-x-3">
+            <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+            <span>{setEditError}</span>
+          </div>
+        )} */}
 
         {/* Dashboard Title & Overview Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
@@ -566,13 +603,44 @@ const ClientDashboard = () => {
                 {/* Mobile */}
                 <div>
                   <label className="block text-xs font-bold tracking-wider text-gray-400 uppercase mb-2">Mobile Number</label>
-                  <input
+                  {/* <input
                     type="tel"
                     required
                     value={editForm.mobile}
                     onChange={(e) => setEditForm({ ...editForm, mobile: e.target.value })}
                     className="block w-full px-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-colors text-sm"
-                  />
+                  /> */}
+
+                  <div className="flex gap-2">
+                    <select
+                      value={editForm.countryCode}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, countryCode: e.target.value })
+                      }
+                      className="w-24 px-2 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                    >
+                      {countryCodes.map((c) => (
+                        <option key={c.code} value={c.code} className="bg-black text-white">
+                          {c.code} {c.country}
+                        </option>
+                      ))}
+                    </select>
+
+                    <input
+                      type="text"
+                      required
+                      value={editForm.mobile}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          mobile: e.target.value.replace(/\D/g, ""), // digits only
+                        })
+                      }
+                      placeholder="9876543210"
+                      className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                    />
+                  </div>
+
                 </div>
                 {/* Age */}
                 <div>

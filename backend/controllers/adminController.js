@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import Payment from '../models/Payment.js';
 import Attendance from '../models/Attendance.js';
 import Notification from '../models/Notification.js';
+import { validateCountryCode, validateEmail, validateMobileNumber } from '../middleware/validatorsMiddleware.js';
 import { sendWhatsAppMessage } from '../services/whatsappService.js';
 import { gym_first_name, gym_full_name } from '../../frontend/src/constants/constants.js';
 import { invoice_pagination_limit, members_pagination_limit, reminder_pagination_limit } from '../const/constants.js';
@@ -202,11 +203,20 @@ export const getMembers = async (req, res) => {
 // @access  Private/Admin
 export const updateMember = async (req, res) => {
   const { 
-    name, email, mobile, age, gender, address, emergencyContact, height, weight,
+    name, email, countryCode, mobile, age, gender, address, emergencyContact, height, weight,
     membership, // { plan, startDate, endDate, status }
     payment, // { amount, paymentMethod }
     membershipConfirmed // if true create payment
-   } = req.body;
+  } = req.body;
+
+  // validation
+  const cc = validateCountryCode(countryCode);
+  const mob = validateMobileNumber(mobile);
+  const em = validateEmail(email);
+
+  if (!cc.valid) return res.status(400).json({ message: cc.message });
+  if (!mob.valid) return res.status(400).json({ message: mob.message });
+  if (!em.valid) return res.status(400).json({ message: em.message });
 
    try {
     const user = await User.findById(req.params.id);
@@ -229,6 +239,7 @@ export const updateMember = async (req, res) => {
 
     user.name = name || user.name;
     user.email = email || user.email;
+    user.countryCode = countryCode || user.countryCode,
     user.mobile = mobile || user.mobile;
     user.age = age !== undefined ? Number(age) : user.age;
     user.gender = gender || user.gender;
