@@ -1372,11 +1372,11 @@ const AdminDashboard = () => {
                             {client.lastPaymentDate
                               ? new Date(
                                   client.lastPaymentDate,
-                                ).toLocaleDateString()
+                                ).toLocaleDateString("en-IN")
                               : "N/A"}
                           </td>
                           <td className="py-4 text-xs font-semibold text-white">
-                            {new Date(client.expiryDate).toLocaleDateString()}
+                            {new Date(client.expiryDate).toLocaleDateString("en-IN")}
                           </td>
                           <td className="py-4 text-center font-mono font-bold text-sm">
                             {client.daysRemaining}
