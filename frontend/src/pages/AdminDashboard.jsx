@@ -158,7 +158,7 @@ const AdminDashboard = () => {
 
       setPendingReminders(data.list);
       setReminderPage(data.page);
-      setReminderTotalPage(data.toalPage)
+      setReminderTotalPage(data.totalPage)
       
     } catch (err) {
       console.error('Error loading pending reminders list:', err);
