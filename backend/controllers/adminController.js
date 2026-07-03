@@ -499,15 +499,12 @@ export const getPendingRemindersList = async (req, res) => {
   const { search, statusFilter, reminderPage } = req.query; // statusFilter = 'soon' | 'today' | 'expired' | 'all'
 
   try {
-    const page = Number(reminderPage);
-    const limit = reminder_pagination_limit;
-    const skip = (page - 1) * limit;
-
     const today = getStartOfDay(new Date());
 
     const clients = await User.find({ role: 'client', 'membership.plan': { $ne: 'none' } })
     // .skip(skip)
     // .limit(limit);
+    console.log("clients:", clients)
 
     const list = [];
 
@@ -547,16 +544,12 @@ export const getPendingRemindersList = async (req, res) => {
         continue;
       }
 
-      // Find last payment date
-      const lastPayment = await Payment.findOne({ user: client._id, status: 'paid' }).sort({ paidAt: -1 });
-
       list.push({
         _id: client._id,
         name: client.name,
         countryCode: client.countryCode,
         mobile: client.mobile,
         plan: client.membership.plan,
-        lastPaymentDate: lastPayment ? lastPayment.paidAt : null,
         expiryDate: client.membership.endDate,
         daysRemaining: daysLeft,
         membershipStatus: statusLabel,
@@ -567,13 +560,40 @@ export const getPendingRemindersList = async (req, res) => {
     // Sort by days remaining (ascending, expired/urgent first)
     list.sort((a, b) => a.daysRemaining - b.daysRemaining);
 
+    const page = Number(reminderPage) || 1;
+    const limit = reminder_pagination_limit;
+
     const totalRemindingClients = list.length;
-    const totalPage = Math.ceil(totalRemindingClients / limit);
+    const totalPage = Math.ceil(totalRemindingClients / limit) || 1;
+
+    // Apply pagination AFTER filtering/sorting
+    const skip = (page - 1) * limit;
+    const paginatedList = list.slice(skip, skip + limit)
+
+    // Fetch last payment only for the clients on this page
+    const clientIds = paginatedList.map(c => c._id);
+    const payments = await Payment.aggregate([
+      { $match: { user: { $in: clientIds }, status: 'paid' } },
+      { $sort: { paidAt: -1 } },
+      {
+        $group: {
+          _id: '$user',
+          paidAt: { $first: '$paidAt' }
+        }
+      }
+    ]);
+    const paymentMap = new Map(payments.map(p => [String(p._id), p.paidAt]));
+
+    const finalList = paginatedList.map(c => ({
+      ...c,
+      lastPaymentDate: paymentMap.get(String(c._id)) || null
+    }));
 
     res.json({
-      list,
+      list: finalList,
       page,
-      totalPage
+      totalPage,
+      totalRemindingClients
     });
 
   } catch (error) {
