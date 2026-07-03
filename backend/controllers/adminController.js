@@ -319,7 +319,7 @@ export const getAllPayments = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const payments = await Payment.find(query)
-      .populate('user', 'name email mobile')
+      .populate('user', 'name email countryCode mobile')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -553,6 +553,7 @@ export const getPendingRemindersList = async (req, res) => {
       list.push({
         _id: client._id,
         name: client.name,
+        countryCode: client.countryCode,
         mobile: client.mobile,
         plan: client.membership.plan,
         lastPaymentDate: lastPayment ? lastPayment.paidAt : null,
@@ -565,7 +566,7 @@ export const getPendingRemindersList = async (req, res) => {
 
     // Sort by days remaining (ascending, expired/urgent first)
     list.sort((a, b) => a.daysRemaining - b.daysRemaining);
-    
+
     const totalRemindingClients = list.length;
     const totalPage = Math.ceil(totalRemindingClients / limit);
 

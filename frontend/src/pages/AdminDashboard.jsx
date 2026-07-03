@@ -73,7 +73,7 @@ const AdminDashboard = () => {
   // Manual Add Member Modal State
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [addForm, setAddForm] = useState({
-    name: '', email: '', countryCode: '', mobile: '', age: '', gender: 'male', address: '', emergencyContact: '',
+    name: '', email: '', countryCode: '+91', mobile: '', age: '', gender: 'male', address: '', emergencyContact: '',
     height: '', weight: '', password: '',
     membership: { plan: 'none', status: 'none', startDate: '', endDate: '' },
     payment: { amount: '', paymentMethod: 'Cash Transaction' }
@@ -301,7 +301,7 @@ const AdminDashboard = () => {
     setEditForm({
       name: member.name || '',
       email: member.email || '',
-      countryCode: member.countryCode || '',
+      countryCode: member.countryCode || '+91',
       mobile: member.mobile || '',
       age: member.age || '',
       gender: member.gender || 'male',
@@ -882,7 +882,7 @@ const AdminDashboard = () => {
                           </div>
                         </td>
                         <td className="py-4 pr-4">
-                          <div>+91 {member.mobile}</div>
+                          <div>{member.countryCode} {member.mobile}</div>
                           <div className="text-xs text-gray-400 capitalize">
                             {member.gender}, {member.age} yrs
                           </div>
@@ -1051,7 +1051,7 @@ const AdminDashboard = () => {
                               {rec.name}
                             </div>
                             <div className="text-xs text-gray-400">
-                              {rec.mobile}
+                              {rec.countryCode} {rec.mobile}
                             </div>
                           </td>
                           <td className="py-4">
@@ -1236,7 +1236,7 @@ const AdminDashboard = () => {
                                 {p.user.name}
                               </div>
                               <div className="text-xs text-gray-500">
-                                {p.user.mobile}
+                                {p.user.countryCode} {p.user.mobile}
                               </div>
                             </>
                           ) : (
@@ -1366,7 +1366,7 @@ const AdminDashboard = () => {
                             {client.name}
                           </td>
                           <td className="py-4 font-semibold text-gray-300">
-                            +91 {client.mobile}
+                            {client.countryCode} {client.mobile}
                           </td>
                           <td className="py-4 capitalize font-semibold text-gold">
                             {client.plan} Plan
@@ -1494,15 +1494,6 @@ const AdminDashboard = () => {
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
                     Mobile Number
                   </label>
-                  {/* <input
-                    type="text"
-                    required
-                    value={editForm.mobile}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, mobile: e.target.value })
-                    }
-                    className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
-                  /> */}
 
                   <div className="flex gap-2">
                     <select
@@ -1529,7 +1520,7 @@ const AdminDashboard = () => {
                           mobile: e.target.value.replace(/\D/g, ""), // digits only
                         })
                       }
-                      placeholder="Number without country code"
+                      placeholder="9876543210"
                       className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                     />
                   </div>
@@ -1892,16 +1883,6 @@ const AdminDashboard = () => {
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
                     Mobile Number *
                   </label>
-                  {/* <input
-                    type="text"
-                    required
-                    value={addForm.mobile}
-                    onChange={(e) =>
-                      setAddForm({ ...addForm, mobile: e.target.value })
-                    }
-                    className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
-                    placeholder="Mobile"
-                  /> */}
 
                   <div className="flex gap-2">
                     <select
@@ -1928,7 +1909,7 @@ const AdminDashboard = () => {
                           mobile: e.target.value.replace(/\D/g, ""), // digits only
                         })
                       }
-                      placeholder="Number without country code"
+                      placeholder="9876543210"
                       className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                     />
                   </div>

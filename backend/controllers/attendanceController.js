@@ -234,7 +234,7 @@ export const getDailyAttendance = async (req, res) => {
     const users = await User.find({ 
       role: 'client',
       'membership.status': 'active'
-    }).select('name email mobile membership')
+    }).select('name email countryCode mobile membership')
     .sort({createdAt: -1})
     .skip(skip)
     .limit(limit);
@@ -255,6 +255,7 @@ export const getDailyAttendance = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        countryCode: user.countryCode,
         mobile: user.mobile,
         membershipStatus: user.membership?.status || 'none',
         session: record ? record.session : null,
