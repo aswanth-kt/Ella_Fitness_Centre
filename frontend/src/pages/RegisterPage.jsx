@@ -1,15 +1,17 @@
 import { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Dumbbell, User as UserIcon, Mail, Phone, Lock, Calendar, MapPin, Heart, Shield, Loader, AlertCircle, ChevronDown } from 'lucide-react';
-import { gym_first_name, gym_second_name } from '../constants/constants';
+import { User as UserIcon, Mail, Phone, Lock, Calendar, MapPin, Heart, Loader, AlertCircle } from 'lucide-react';
 import { healthIssuesList } from '../constants/healthIssues';
+import { validateAge, validateCountryCode, validateEmail, validateMobileNumber, validatePassword } from '../helpers/validators';
+import { countryCodes } from '../constants/countryCodes';
 
 const RegisterPage = () => {
   const { user, register } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    countryCode: '+91',
     mobile: '',
     age: '',
     gender: 'male',
@@ -49,38 +51,69 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { name, email, mobile, password, age, healthIssues, healthDescription } = formData;
+    const { name, email, countryCode, mobile, password, age, healthIssues, healthDescription } = formData;
     
-    if (!name || !email || !mobile || !password || !age) {
+    if (!name || !email || !mobile || !password || !age || !countryCode) {
       setError('Please fill out all required fields');
       return;
     };
-    
-    if (hasHealthIssue && !healthIssues) {
-      setError('Please select a health issue')
-      return;
-    };
 
-    if (hasHealthIssue && healthIssues === 'other' && !healthDescription) {
-      setError("Please fill out health description")
-      return;
-    };
+    try {
+      // Form validator
+      const cc = validateCountryCode(countryCode);
+      const mob = validateMobileNumber(mobile);
+      const em = validateEmail(email);
+      const pw = validatePassword(password);
+      const ag = validateAge(age);
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      return;
-    };
+      if (!em.valid) {
+        setError(em.message)
+        return;
+      }
 
-    setError('');
-    setLoading(true);
-    
-    const result = await register(formData);
-    setLoading(false);
+      if (!cc.valid) {
+        setError(cc.message)
+        return;
+      }
 
-    if (result.success) {
-      navigate('/dashboard');
-    } else {
-      setError(result.message);
+      if (!mob.valid) {
+        setError(mob.message)
+        return;
+      }
+
+      if (!pw.valid) {
+        setError(pw.message)
+        return;
+      }
+
+      if (!ag.valid) {
+        setError(ag.message)
+        return;
+      }
+      
+      if (hasHealthIssue && !healthIssues) {
+        setError('Please select a health issue')
+        return;
+      };
+
+      if (hasHealthIssue && healthIssues === 'other' && !healthDescription) {
+        setError("Please fill out health description")
+        return;
+      };
+
+      setLoading(true);    
+
+      const result = await register(formData);
+      
+      if (result.success) {
+        navigate('/dashboard');
+      } else {
+        setError(result.message);
+      }
+    } catch (error) {
+      setError(error.response?.data?.message || 'Failed to register');
+    } finally{
+      setLoading(false)
     }
   };
 
@@ -119,7 +152,7 @@ const RegisterPage = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Full Name */}
               <div>
@@ -169,10 +202,10 @@ const RegisterPage = () => {
                   Mobile Number *
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500">
+                  {/* <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500">
                     <Phone className="h-5 w-5" />
-                  </div>
-                  <input
+                  </div> */}
+                  {/* <input
                     type="tel"
                     name="mobile"
                     required
@@ -180,7 +213,37 @@ const RegisterPage = () => {
                     onChange={handleChange}
                     className="block w-full pl-11 pr-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-colors text-sm"
                     placeholder="9876543210"
-                  />
+                  /> */}
+
+                  <div className="flex gap-2">
+                    <select
+                      value={formData.countryCode || "+91"}
+                      onChange={(e) =>
+                        setFormData({ ...formData, countryCode: e.target.value })
+                      }
+                      className="w-24 px-2 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                    >
+                      {countryCodes.map((c) => (
+                        <option key={c.code} value={c.code} className="bg-black text-white">
+                          {c.code} {c.country}
+                        </option>
+                      ))}
+                    </select>
+
+                    <input
+                      type="text"
+                      required
+                      value={formData.mobile}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          mobile: e.target.value.replace(/\D/g, ""), // digits only
+                        })
+                      }
+                      placeholder="9876543210"
+                      className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -289,7 +352,7 @@ const RegisterPage = () => {
                     value={formData.password}
                     onChange={handleChange}
                     className="block w-full pl-11 pr-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-colors text-sm"
-                    placeholder="••••••••"
+                    placeholder="••••••"
                   />
                 </div>
               </div>

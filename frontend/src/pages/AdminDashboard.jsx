@@ -13,6 +13,7 @@ import {
 import { attendence_pagination_limit, gym_first_name, invoice_pagination_limit, members_pagination_limit, reminder_pagination_limit } from '../constants/constants.js';
 import Pagination from '../components/Pagination.jsx';
 import { membershipPlans } from '../constants/membershipPlans.js';
+import { countryCodes } from '../constants/countryCodes.js';
 
 const AdminDashboard = () => {
   // Tabs: 'overview', 'members', 'attendance', 'payments', 'reminders'
@@ -60,7 +61,7 @@ const AdminDashboard = () => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [editForm, setEditForm] = useState({
-    name: '', email: '', mobile: '', age: '', gender: 'male', address: '', emergencyContact: '',
+    name: '', email: '', countryCode: '', mobile: '', age: '', gender: 'male', address: '', emergencyContact: '',
     height: '', weight: '',
     membership: { plan: 'none', status: 'none', startDate: '', endDate: '' },
     payment: { amount: '', paymentMethod: 'Cash Transaction' }
@@ -72,7 +73,7 @@ const AdminDashboard = () => {
   // Manual Add Member Modal State
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [addForm, setAddForm] = useState({
-    name: '', email: '', mobile: '', age: '', gender: 'male', address: '', emergencyContact: '',
+    name: '', email: '', countryCode: '', mobile: '', age: '', gender: 'male', address: '', emergencyContact: '',
     height: '', weight: '', password: '',
     membership: { plan: 'none', status: 'none', startDate: '', endDate: '' },
     payment: { amount: '', paymentMethod: 'Cash Transaction' }
@@ -94,6 +95,7 @@ const AdminDashboard = () => {
   // Reminder tab
   const [reminderPage, setReminderPage] = useState(1);
   const [reminderTotalPage, setReminderTotalPage] = useState(1);
+
 
   // Load stats and database entities
   const fetchStats = async () => {
@@ -299,6 +301,7 @@ const AdminDashboard = () => {
     setEditForm({
       name: member.name || '',
       email: member.email || '',
+      countryCode: member.countryCode || '',
       mobile: member.mobile || '',
       age: member.age || '',
       gender: member.gender || 'male',
@@ -349,7 +352,7 @@ const AdminDashboard = () => {
       setSuccessMsg('Manual gym member profile created and activated!');
       setAddModalOpen(false);
       setAddForm({
-        name: '', email: '', mobile: '', age: '', gender: 'male', address: '', emergencyContact: '',
+        name: '', email: '', countryCode: '', mobile: '', age: '', gender: 'male', address: '', emergencyContact: '',
         height: '', weight: '', password: '',
         membership: { plan: 'none', status: 'none', startDate: '', endDate: '' },
         payment: { amount: '', paymentMethod: 'Cash Transaction' }
@@ -1491,7 +1494,7 @@ const AdminDashboard = () => {
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
                     Mobile Number
                   </label>
-                  <input
+                  {/* <input
                     type="text"
                     required
                     value={editForm.mobile}
@@ -1499,7 +1502,38 @@ const AdminDashboard = () => {
                       setEditForm({ ...editForm, mobile: e.target.value })
                     }
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
-                  />
+                  /> */}
+
+                  <div className="flex gap-2">
+                    <select
+                      value={editForm.countryCode}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, countryCode: e.target.value })
+                      }
+                      className="w-24 px-2 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                    >
+                      {countryCodes.map((c) => (
+                        <option key={c.code} value={c.code} className="bg-black text-white">
+                          {c.code} {c.country}
+                        </option>
+                      ))}
+                    </select>
+
+                    <input
+                      type="tel"
+                      required
+                      value={editForm.mobile}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          mobile: e.target.value.replace(/\D/g, ""), // digits only
+                        })
+                      }
+                      placeholder="Number without country code"
+                      className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                    />
+                  </div>
+                  
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
@@ -1858,7 +1892,7 @@ const AdminDashboard = () => {
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
                     Mobile Number *
                   </label>
-                  <input
+                  {/* <input
                     type="text"
                     required
                     value={addForm.mobile}
@@ -1867,7 +1901,38 @@ const AdminDashboard = () => {
                     }
                     className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
                     placeholder="Mobile"
-                  />
+                  /> */}
+
+                  <div className="flex gap-2">
+                    <select
+                      value={addForm.countryCode}
+                      onChange={(e) =>
+                        setAddForm({ ...addForm, countryCode: e.target.value })
+                      }
+                      className="w-24 px-2 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                    >
+                      {countryCodes.map((c) => (
+                        <option key={c.code} value={c.code} className="bg-black text-white">
+                          {c.code} {c.country}
+                        </option>
+                      ))}
+                    </select>
+
+                    <input
+                      type="tel"
+                      required
+                      value={addForm.mobile}
+                      onChange={(e) =>
+                        setAddForm({
+                          ...addForm,
+                          mobile: e.target.value.replace(/\D/g, ""), // digits only
+                        })
+                      }
+                      placeholder="Number without country code"
+                      className="block w-full px-4 py-2.5 bg-black/40 border border-gold/15 rounded-xl text-white text-sm focus:outline-none focus:border-gold"
+                    />
+                  </div>
+
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">

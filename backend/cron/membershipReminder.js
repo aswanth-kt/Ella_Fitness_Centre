@@ -5,7 +5,7 @@ import { sendWhatsAppMessage } from '../services/whatsappService.js';
 import { gym_first_name } from '../../frontend/src/constants/constants.js';
 
 // Schedule: '0 8 * * *' (every day at 8:00 AM)
-cron.schedule('* * * * *', async () => {
+cron.schedule('0 8 * * *', async () => {
   console.log('Cron started: membership reminder check');
   try {
     const users = await User.find({

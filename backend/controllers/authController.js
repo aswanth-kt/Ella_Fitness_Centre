@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import generateOtp from '../utils/otpGenerator.js';
 import sendNodeMailer from '../utils/emailVerification.js';
+import { validateCountryCode, validateEmail, validateMobileNumber, validatePassword } from '../middleware/validatorsMiddleware.js';
 
 // Helper to generate JWT token
 const generateToken = (id) => {
@@ -14,7 +15,18 @@ const generateToken = (id) => {
 // @route   POST /api/auth/register
 // @access  Public
 export const registerUser = async (req, res) => {
-  const { name, email, mobile, password, age, gender, address, emergencyContact, role, height, weight, healthIssues, healthDescription } = req.body;
+  const { name, email, countryCode, mobile, password, age, gender, address, emergencyContact, role, height, weight, healthIssues, healthDescription } = req.body;
+
+  // fields validation
+  const cc = validateCountryCode(countryCode);
+  const mob = validateMobileNumber(mobile);
+  const em = validateEmail(email);
+  const pw = validatePassword(password);
+
+  if (!cc.valid) return res.status(400).json({ message: cc.message });
+  if (!mob.valid) return res.status(400).json({ message: mob.message });
+  if (!em.valid) return res.status(400).json({ message: em.message });
+  if (!pw.valid) return res.status(400).json({ message: pw.message });
 
   try {
     const userExists = await User.findOne({ email });
@@ -24,14 +36,15 @@ export const registerUser = async (req, res) => {
     }
 
     // Determine role (allow role assignment for easy testing in MVP)
-    const userRole = role === 'admin' ? 'admin' : 'client';
+    // const userRole = role === 'admin' ? 'admin' : 'client';
 
     const user = await User.create({
       name,
       email,
+      countryCode,
       mobile,
       password,
-      role: userRole,
+      role: 'client',
       age: age ? Number(age) : undefined,
       gender,
       address,
@@ -51,7 +64,7 @@ export const registerUser = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
-        mobile: user.mobile,
+        mobile: user.countryCode + user.mobile,
         role: user.role,
         membership: user.membership,
         token: generateToken(user._id),
@@ -103,6 +116,7 @@ export const getUserProfile = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        countryCode: user.countryCode,
         mobile: user.mobile,
         role: user.role,
         age: user.age,
@@ -127,11 +141,23 @@ export const getUserProfile = async (req, res) => {
 // @route   PUT /api/auth/profile
 // @access  Private
 export const updateUserProfile = async (req, res) => {
+  // validation
+  const cc = validateCountryCode(req.body?.countryCode);
+  const mob = validateMobileNumber(req.body?.mobile);
+  const em = validateEmail(req.body?.email);
+  const pw = validatePassword(req.body?.password);
+
+  if (!cc.valid) return res.status(400).json({ message: cc.message });
+  if (!mob.valid) return res.status(400).json({ message: mob.message });
+  if (req.body?.email && !em.valid) return res.status(400).json({ message: em.message });
+  if (req.body?.password && !pw.valid) return res.status(400).json({ message: pw.message });
+
   try {
     const user = await User.findById(req.user._id);
 
     if (user) {
       user.name = req.body.name || user.name;
+      user.countryCode = req.body.countryCode || user.countryCode;
       user.mobile = req.body.mobile || user.mobile;
       user.age = req.body.age !== undefined ? Number(req.body.age) : user.age;
       user.gender = req.body.gender || user.gender;
@@ -157,6 +183,7 @@ export const updateUserProfile = async (req, res) => {
       res.json({
         _id: updatedUser._id,
         name: updatedUser.name,
+        countryCode: updatedUser.countryCode,
         email: updatedUser.email,
         mobile: updatedUser.mobile,
         role: updatedUser.role,
