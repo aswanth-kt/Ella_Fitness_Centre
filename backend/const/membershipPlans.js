@@ -8,4 +8,4 @@ export const MEMBERSHIP_PLANS = {
 };
 
 // One momth remaining days
-export const ONE_MONTH_DURATION = 29;
+export const ONE_MONTH_DURATION = 30;
