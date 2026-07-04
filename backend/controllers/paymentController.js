@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import razorpayInstance from '../config/razorpay.js';
 import Payment from '../models/Payment.js';
 import User from '../models/User.js';
-import { MEMBERSHIP_PLANS } from '../const/membershipPlans.js';
+import { MEMBERSHIP_PLANS, ONE_MONTH_DURATION } from '../const/membershipPlans.js';
 import { generateInvoiceNumber } from '../utils/invoiceGenerator.js';
 
 // @desc    Create Razorpay Order
@@ -121,7 +121,7 @@ export const verifyPayment = async (req, res) => {
     }
 
     const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + (selectedPlan.durationMonths * 29));
+    endDate.setDate(startDate.getDate() + (selectedPlan.durationMonths * ONE_MONTH_DURATION));
     endDate.setHours(0, 0, 0, 0);
 
     // Update User Membership

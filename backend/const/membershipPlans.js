@@ -6,3 +6,6 @@ export const MEMBERSHIP_PLANS = {
   "1year": { name: '1 Year', durationMonths: 12, priceInINR: 10500 },
   "student": { name: 'Student Plan', durationMonths: 1, priceInINR: 800 },
 };
+
+// One momth remaining days
+export const ONE_MONTH_DURATION = 29;
