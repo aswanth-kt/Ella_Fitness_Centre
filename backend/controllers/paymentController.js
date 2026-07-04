@@ -121,7 +121,7 @@ export const verifyPayment = async (req, res) => {
     }
 
     const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + (selectedPlan.durationMonths * 30));
+    endDate.setDate(startDate.getDate() + (selectedPlan.durationMonths * 29));
     endDate.setHours(0, 0, 0, 0);
 
     // Update User Membership
