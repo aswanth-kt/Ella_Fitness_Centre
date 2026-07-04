@@ -87,7 +87,7 @@ export const verifyPayment = async (req, res) => {
     }
 
     const invoiceNo = await generateInvoiceNumber();
-console.log("Generated Invoice:", invoiceNo);
+
     // Update payment record to paid
     const payment = await Payment.findOneAndUpdate(
       {
@@ -106,14 +106,23 @@ console.log("Generated Invoice:", invoiceNo);
     // Calculate dates
     const user = await User.findById(req.user._id);
     let startDate = new Date();
+    // Normalize to start of day
+    startDate.setHours(0, 0, 0, 0); 
 
     // Extend membership if current plan is active and endDate is in the future
-    if (user.membership && user.membership.status === 'active' && user.membership.endDate && new Date(user.membership.endDate) > new Date()) {
+    if (
+      user.membership && 
+      user.membership.status === 'active' && 
+      user.membership.endDate && 
+      new Date(user.membership.endDate) > new Date()
+    ) {
       startDate = new Date(user.membership.endDate);
+      startDate.setHours(0, 0, 0, 0);
     }
 
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + (selectedPlan.durationMonths * 30));
+    endDate.setHours(0, 0, 0, 0);
 
     // Update User Membership
     user.membership = {

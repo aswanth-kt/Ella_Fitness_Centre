@@ -197,6 +197,7 @@ const ClientDashboard = () => {
     const end = new Date(user.membership.endDate);
     const today = new Date();
     today.setHours(0,0,0,0);
+    end.setHours(0,0,0,0);
     const diff = end.getTime() - today.getTime();
     const days = Math.ceil(diff / (1000 * 3600 * 24));
     return days > 0 ? days : 0;
@@ -603,13 +604,6 @@ const ClientDashboard = () => {
                 {/* Mobile */}
                 <div>
                   <label className="block text-xs font-bold tracking-wider text-gray-400 uppercase mb-2">Mobile Number</label>
-                  {/* <input
-                    type="tel"
-                    required
-                    value={editForm.mobile}
-                    onChange={(e) => setEditForm({ ...editForm, mobile: e.target.value })}
-                    className="block w-full px-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-colors text-sm"
-                  /> */}
 
                   <div className="flex gap-2">
                     <select

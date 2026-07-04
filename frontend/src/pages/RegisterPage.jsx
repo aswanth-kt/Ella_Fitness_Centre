@@ -81,13 +81,13 @@ const RegisterPage = () => {
         return;
       }
 
-      if (!pw.valid) {
-        setError(pw.message)
+      if (!ag.valid) {
+        setError(ag.message)
         return;
       }
 
-      if (!ag.valid) {
-        setError(ag.message)
+      if (!pw.valid) {
+        setError(pw.message)
         return;
       }
       
