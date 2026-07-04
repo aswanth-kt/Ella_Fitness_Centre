@@ -327,7 +327,7 @@ const ClientDashboard = () => {
                   <div>
                     <span className="text-gray-400 block uppercase">EXPIRY DATE</span>
                     <span className="text-white font-semibold mt-0.5 block">
-                      {user?.membership?.endDate ? new Date(user.membership.endDate).toLocaleDateString('en-IN') : 'N/A'}
+                      {user?.membership?.endDate ? new Date(user.membership.endDate).toLocaleDateString('en-IN', {timeZone: 'UTC'}) : 'N/A'}
                     </span>
                   </div>
                   <div>

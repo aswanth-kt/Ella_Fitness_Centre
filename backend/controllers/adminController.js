@@ -6,6 +6,7 @@ import { validateCountryCode, validateEmail, validateMobileNumber } from '../mid
 import { sendWhatsAppMessage } from '../services/whatsappService.js';
 import { gym_first_name, gym_full_name } from '../../frontend/src/constants/constants.js';
 import { invoice_pagination_limit, members_pagination_limit, reminder_pagination_limit } from '../const/constants.js';
+import { generateInvoiceNumber } from '../utils/invoiceGenerator.js';
 
 // Helper to normalize dates
 const getStartOfDay = (date) => {
@@ -248,7 +249,14 @@ export const updateMember = async (req, res) => {
     user.height = height !== undefined ? Number(height) : user.height;
     user.weight = weight !== undefined ? Number(weight) : user.weight;
 
-    if (payment && payment.amount && membership && membershipConfirmed) {
+    if (
+      payment && 
+      payment.amount && 
+      membership && 
+      membershipConfirmed
+    ) {
+      const invoiceNo = await generateInvoiceNumber();
+      
       await Payment.create({
         user: user._id,
         amount: Number(payment.amount),
@@ -257,6 +265,7 @@ export const updateMember = async (req, res) => {
         razorpayOrderId: `manual_${Math.random().toString(36).substring(2, 12)}`,
         razorpayPaymentId: `pay_manual_${Math.random().toString(36).substring(2, 12)}`,
         status: "paid",
+        invoiceNo,
         paidAt: new Date()
       });
 
