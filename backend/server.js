@@ -5,6 +5,7 @@ import session from 'express-session';
 import MongoStore from "connect-mongo";
 import helmet from "helmet";
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
@@ -46,6 +47,7 @@ app.use(cors({
 
 // Body Parser
 app.use(express.json({ limit: '16kb' }));
+app.use(cookieParser());
 
 // Security
 app.use(helmet());

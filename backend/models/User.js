@@ -23,6 +23,7 @@ const userSchema = new mongoose.Schema(
     },
     healthIssues: { type: String },
     healthDescription: { type: String },
+    refreshToken: { type: String },
   },
   { timestamps: true }
 );

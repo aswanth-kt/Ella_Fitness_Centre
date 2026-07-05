@@ -3,12 +3,11 @@ import User from '../models/User.js';
 
 // Protect routes for logged in clients/admins
 export const protect = async (req, res, next) => {
-  let token;
+  let token = req.cookies.accessToken;
 
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+  if (token) {
     try {
-      token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'gym_jwt_secret_token_key_gold_luxury_9988');
+      const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET || 'gym_access_token_secret_9988');
 
       req.user = await User.findById(decoded.id).select('-password');
       if (!req.user) {
