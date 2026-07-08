@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import { verifyAccessToken } from '../utils/jwt.js';
 import User from '../models/User.js';
 
 // Protect routes for logged in clients/admins
@@ -7,7 +7,7 @@ export const protect = async (req, res, next) => {
 
   if (token) {
     try {
-      const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+      const decoded = verifyAccessToken(token);
 
       req.user = await User.findById(decoded.id).select('-password');
       if (!req.user) {
