@@ -7,7 +7,7 @@ export const protect = async (req, res, next) => {
 
   if (token) {
     try {
-      const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET || 'gym_access_token_secret_9988');
+      const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
       req.user = await User.findById(decoded.id).select('-password');
       if (!req.user) {
