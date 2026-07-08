@@ -10,36 +10,20 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Set auth header helper
-  const setAuthHeader = (token) => {
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    } else {
-      delete axios.defaults.headers.common['Authorization'];
-    }
-  };
-
   // Check login status on load
   useEffect(() => {
     const initializeAuth = async () => {
-      const storedToken = localStorage.getItem('gym_token');
-      const storedUser = localStorage.getItem('gym_user');
-
-      if (storedToken && storedUser) {
-        try {
-          setUser(JSON.parse(storedUser));
-          setAuthHeader(storedToken);
-          
-          // Verify token and fetch fresh profile from backend
-          const { data } = await axios.get('/auth/profile');
-          setUser(data);
-          localStorage.setItem('gym_user', JSON.stringify(data));
-        } catch (error) {
-          console.error('Session validation failed:', error);
-          logout();
-        }
+      try {
+        await axios.post('/auth/refresh');
+        const { data } = await axios.get('/auth/profile');
+        setUser(data);
+        localStorage.setItem('gym_user', JSON.stringify(data));
+      } catch (error) {
+        setUser(null);
+        localStorage.removeItem('gym_user');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     initializeAuth();
@@ -51,9 +35,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await axios.post('/auth/login', { email, password });
       setUser(data);
-      localStorage.setItem('gym_token', data.token);
       localStorage.setItem('gym_user', JSON.stringify(data));
-      setAuthHeader(data.token);
       return { success: true };
     } catch (error) {
       return { 
@@ -71,9 +53,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await axios.post('/auth/register', userData);
       setUser(data);
-      localStorage.setItem('gym_token', data.token);
       localStorage.setItem('gym_user', JSON.stringify(data));
-      setAuthHeader(data.token);
       return { success: true };
     } catch (error) {
       return {
@@ -89,14 +69,8 @@ export const AuthProvider = ({ children }) => {
   const updateProfile = async (profileData) => {
     try {
       const { data } = await axios.put('/auth/profile', profileData);
-      // Keep token from updated request if present, or existing token
-      const token = data.token || localStorage.getItem('gym_token');
       setUser(data);
       localStorage.setItem('gym_user', JSON.stringify(data));
-      if (data.token) {
-        localStorage.setItem('gym_token', token);
-        setAuthHeader(token);
-      }
       return { success: true };
     } catch (error) {
       return {
@@ -118,11 +92,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Logout handler
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await axios.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
     setUser(null);
-    localStorage.removeItem('gym_token');
     localStorage.removeItem('gym_user');
-    setAuthHeader(null);
   };
 
   return (

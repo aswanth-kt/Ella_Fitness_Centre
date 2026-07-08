@@ -6,9 +6,33 @@ import { validateCountryCode, validateEmail, validateMobileNumber, validatePassw
 
 // Helper to generate JWT token
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+  return jwt.sign({ id }, process.env.JWT_SECRET || 'gym_jwt_secret_token_key_gold_luxury_9988', {
     expiresIn: '30d',
   });
+};
+
+// Helper to set auth cookies
+const setAuthCookies = (res, accessToken, refreshToken) => {
+  const isProd = process.env.NODE_ENV === 'production';
+  const cookieOptions = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+  };
+
+  if (accessToken) {
+    res.cookie('accessToken', accessToken, {
+      ...cookieOptions,
+      maxAge: 15 * 60 * 1000 // 15 mins
+    });
+  }
+  
+  if (refreshToken) {
+    res.cookie('refreshToken', refreshToken, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+  }
 };
 
 // @desc    Register a new user
@@ -60,6 +84,14 @@ export const registerUser = async (req, res) => {
     });
 
     if (user) {
+      const accessToken = signAccessToken(user._id);
+      const refreshToken = signRefreshToken(user._id);
+      
+      user.refreshToken = refreshToken;
+      await user.save();
+      
+      setAuthCookies(res, accessToken, refreshToken);
+
       res.status(201).json({
         _id: user._id,
         name: user.name,
@@ -67,7 +99,6 @@ export const registerUser = async (req, res) => {
         mobile: user.countryCode + user.mobile,
         role: user.role,
         membership: user.membership,
-        token: generateToken(user._id),
       });
     } else {
       res.status(400).json({ message: 'Invalid user data' });
@@ -87,6 +118,14 @@ export const loginUser = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user && (await user.matchPassword(password))) {
+      const accessToken = signAccessToken(user._id);
+      const refreshToken = signRefreshToken(user._id);
+      
+      user.refreshToken = refreshToken;
+      await user.save();
+      
+      setAuthCookies(res, accessToken, refreshToken);
+
       res.json({
         _id: user._id,
         name: user.name,
@@ -95,14 +134,6 @@ export const loginUser = async (req, res) => {
         mobile: user.mobile,
         role: user.role,
         membership: user.membership,
-        age: user.age,
-        gender: user.gender,
-        height: user.height,
-        weight: user.weight,
-        emergencyContact: user.emergencyContact,
-        healthIssues: user?.healthIssues,
-        healthDescription: user?.healthDescription,
-        address: user?.address,
         token: generateToken(user._id),
       });
     } else {
@@ -205,7 +236,6 @@ export const updateUserProfile = async (req, res) => {
         healthIssues: updatedUser.healthIssues,
         healthDescription: updatedUser.healthDescription,
         membership: updatedUser.membership,
-        token: generateToken(updatedUser._id),
       });
     } else {
       res.status(404).json({ message: 'User not found' });
@@ -316,3 +346,67 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+// @desc    Logout user / clear cookie
+// @route   POST /api/auth/logout
+// @access  Public
+export const logoutUser = async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  
+  if (refreshToken) {
+    try {
+      const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET || 'gym_refresh_token_secret_1122');
+      const user = await User.findById(decoded.id);
+      if (user) {
+        user.refreshToken = null;
+        await user.save();
+      }
+    } catch (error) {
+      // Ignore token verification errors on logout, just clear the cookies
+    }
+  }
+
+  res.clearCookie('accessToken');
+  res.clearCookie('refreshToken');
+  res.status(200).json({ message: 'Logged out successfully' });
+};
+
+// @desc    Refresh access token
+// @route   POST /api/auth/refresh
+// @access  Public
+export const refreshUserToken = async (req, res) => {
+  const presentedToken = req.cookies.refreshToken;
+
+  if (!presentedToken) {
+    return res.status(401).json({ message: 'Not authorized, no refresh token' });
+  }
+
+  try {
+    const decoded = jwt.verify(presentedToken, process.env.REFRESH_TOKEN_SECRET || 'gym_refresh_token_secret_1122');
+    const user = await User.findById(decoded.id);
+
+    if (!user || user.refreshToken !== presentedToken) {
+      if (user) {
+        user.refreshToken = null;
+        await user.save();
+      }
+      res.clearCookie('accessToken');
+      res.clearCookie('refreshToken');
+      return res.status(401).json({ message: 'Not authorized, token mismatch' });
+    }
+
+    const newAccessToken = signAccessToken(user._id);
+    const newRefreshToken = signRefreshToken(user._id);
+    
+    user.refreshToken = newRefreshToken;
+    await user.save();
+    
+    setAuthCookies(res, newAccessToken, newRefreshToken);
+
+    res.json({ message: 'Token refreshed' });
+  } catch (error) {
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
+    return res.status(401).json({ message: 'Not authorized, token failed' });
+  }
+};
+
