@@ -6,7 +6,7 @@ import { validateCountryCode, validateEmail, validateMobileNumber, validatePassw
 
 // Helper to generate JWT token
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'gym_jwt_secret_token_key_gold_luxury_9988', {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: '30d',
   });
 };
@@ -126,6 +126,16 @@ export const loginUser = async (req, res) => {
       
       setAuthCookies(res, accessToken, refreshToken);
 
+      // res.json({
+      //   _id: user._id,
+      //   name: user.name,
+      //   email: user.email,
+      //   countryCode: user.countryCode,
+      //   mobile: user.mobile,
+      //   role: user.role,
+      //   membership: user.membership,
+      //   token: generateToken(user._id),
+      // });
       res.json({
         _id: user._id,
         name: user.name,
@@ -134,8 +144,17 @@ export const loginUser = async (req, res) => {
         mobile: user.mobile,
         role: user.role,
         membership: user.membership,
+        age: user.age,
+        gender: user.gender,
+        height: user.height,
+        weight: user.weight,
+        emergencyContact: user.emergencyContact,
+        healthIssues: user?.healthIssues,
+        healthDescription: user?.healthDescription,
+        address: user?.address,
         token: generateToken(user._id),
       });
+
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
     }

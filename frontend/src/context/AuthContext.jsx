@@ -19,6 +19,7 @@ export const AuthProvider = ({ children }) => {
         setUser(data);
         localStorage.setItem('gym_user', JSON.stringify(data));
       } catch (error) {
+        console.error(error.response?.data?.message || error)
         setUser(null);
         localStorage.removeItem('gym_user');
       } finally {
@@ -34,6 +35,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const { data } = await axios.post('/auth/login', { email, password });
+      console.log("auth login data:", data)
       setUser(data);
       localStorage.setItem('gym_user', JSON.stringify(data));
       return { success: true };
