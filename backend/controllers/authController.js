@@ -3,13 +3,7 @@ import User from '../models/User.js';
 import generateOtp from '../utils/otpGenerator.js';
 import sendNodeMailer from '../utils/emailVerification.js';
 import { validateCountryCode, validateEmail, validateMobileNumber, validatePassword } from '../middleware/validatorsMiddleware.js';
-
-// Helper to generate JWT token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
-  });
-};
+import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
 
 // Helper to set auth cookies
 const setAuthCookies = (res, accessToken, refreshToken) => {
@@ -152,7 +146,7 @@ export const loginUser = async (req, res) => {
         healthIssues: user?.healthIssues,
         healthDescription: user?.healthDescription,
         address: user?.address,
-        token: generateToken(user._id),
+        token: signAccessToken(user._id),
       });
 
     } else {
@@ -373,7 +367,7 @@ export const logoutUser = async (req, res) => {
   
   if (refreshToken) {
     try {
-      const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET || 'gym_refresh_token_secret_1122');
+      const decoded = verifyRefreshToken(refreshToken);
       const user = await User.findById(decoded.id);
       if (user) {
         user.refreshToken = null;
@@ -400,7 +394,7 @@ export const refreshUserToken = async (req, res) => {
   }
 
   try {
-    const decoded = jwt.verify(presentedToken, process.env.REFRESH_TOKEN_SECRET || 'gym_refresh_token_secret_1122');
+    const decoded = verifyRefreshToken(presentedToken);
     const user = await User.findById(decoded.id);
 
     if (!user || user.refreshToken !== presentedToken) {
