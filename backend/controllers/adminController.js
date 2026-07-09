@@ -511,9 +511,6 @@ export const getPendingRemindersList = async (req, res) => {
     const today = getStartOfDay(new Date());
 
     const clients = await User.find({ role: 'client', 'membership.plan': { $ne: 'none' } })
-    // .skip(skip)
-    // .limit(limit);
-    console.log("clients:", clients)
 
     const list = [];
 
