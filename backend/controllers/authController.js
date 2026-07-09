@@ -146,7 +146,7 @@ export const loginUser = async (req, res) => {
         healthIssues: user?.healthIssues,
         healthDescription: user?.healthDescription,
         address: user?.address,
-        token: signAccessToken(user._id),
+        refreshToken: signAccessToken(user._id),
       });
 
     } else {
