@@ -5,14 +5,23 @@ import sendNodeMailer from '../utils/emailVerification.js';
 import { validateCountryCode, validateEmail, validateMobileNumber, validatePassword } from '../middleware/validatorsMiddleware.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
 
-// Helper to set auth cookies
-const setAuthCookies = (res, accessToken, refreshToken) => {
+// Helper to get cookie options
+const getCookieOptions = () => {
   const isProd = process.env.NODE_ENV === 'production';
-  const cookieOptions = {
+  return {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? 'none' : 'lax',
   };
+};
+
+// Helper to set auth cookies
+const setAuthCookies = (res, accessToken, refreshToken) => {
+  console.log("=== DEBUG: setAuthCookies ===");
+  console.log("NODE_ENV:", process.env.NODE_ENV);
+  
+  const cookieOptions = getCookieOptions();
+  console.log("Cookie Options applied:", cookieOptions);
 
   if (accessToken) {
     res.cookie('accessToken', accessToken, {
@@ -27,6 +36,14 @@ const setAuthCookies = (res, accessToken, refreshToken) => {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
   }
+  
+  console.log("=== DEBUG: Cookies successfully attached to response ===");
+};
+
+const clearAuthCookies = (res) => {
+  const cookieOptions = getCookieOptions();
+  res.clearCookie('accessToken', cookieOptions);
+  res.clearCookie('refreshToken', cookieOptions);
 };
 
 // @desc    Register a new user
@@ -119,6 +136,11 @@ export const loginUser = async (req, res) => {
       await user.save();
       
       setAuthCookies(res, accessToken, refreshToken);
+      
+      console.log("=== DEBUG: loginUser ===");
+      console.log("Generated access token snippet:", accessToken.substring(0, 10) + "...");
+      console.log("Generated refresh token snippet:", refreshToken.substring(0, 10) + "...");
+      console.log("Saved DB refresh token snippet:", user.refreshToken.substring(0, 10) + "...");
 
       // res.json({
       //   _id: user._id,
@@ -377,8 +399,7 @@ export const logoutUser = async (req, res) => {
     }
   }
 
-  res.clearCookie('accessToken');
-  res.clearCookie('refreshToken');
+  clearAuthCookies(res);
   res.status(200).json({ message: 'Logged out successfully' });
 };
 
@@ -401,8 +422,11 @@ export const refreshUserToken = async (req, res) => {
         user.refreshToken = null;
         await user.save();
       }
-      res.clearCookie('accessToken');
-      res.clearCookie('refreshToken');
+      console.log("=== DEBUG: refreshUserToken Mismatch ===");
+      console.log("Presented Token:", presentedToken ? presentedToken.substring(0, 10) + "..." : "undefined");
+      console.log("DB Token:", user.refreshToken ? user.refreshToken.substring(0, 10) + "..." : "null");
+      
+      clearAuthCookies(res);
       return res.status(401).json({ message: 'Not authorized, token mismatch' });
     }
 
@@ -416,8 +440,7 @@ export const refreshUserToken = async (req, res) => {
 
     res.json({ message: 'Token refreshed' });
   } catch (error) {
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    clearAuthCookies(res);
     return res.status(401).json({ message: 'Not authorized, token failed' });
   }
 };
