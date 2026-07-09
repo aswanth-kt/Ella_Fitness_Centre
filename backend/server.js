@@ -56,7 +56,7 @@ app.use(helmet());
 app.use(compression());
 
 app.set('trust proxy', 1);
-
+console.log('NODE_ENV:', process.env);
 app.use(session({
   name: 'gym.sid',
   secret: process.env.SESSION_SECRET,
