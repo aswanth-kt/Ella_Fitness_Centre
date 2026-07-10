@@ -26,10 +26,7 @@ const app = express();
 
 // Middlewares
 const allowedOrigins = [
-  process.env.FRONTEND_URL,
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:3000',
+  process.env.FRONTEND_URL
 ].filter(Boolean);
 
 app.use(cors({
