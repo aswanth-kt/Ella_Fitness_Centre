@@ -243,7 +243,6 @@ const ClientDashboard = () => {
       setEditError(error.response?.data?.message || 'Failed to update profile');
     } finally {
       setEditLoading(false)
-      console.log("msg:", editError)
     }
   };
 

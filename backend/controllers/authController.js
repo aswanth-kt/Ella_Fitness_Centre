@@ -17,11 +17,8 @@ const getCookieOptions = () => {
 
 // Helper to set auth cookies
 const setAuthCookies = (res, accessToken, refreshToken) => {
-  console.log("=== DEBUG: setAuthCookies ===");
-  console.log("NODE_ENV:", process.env.NODE_ENV);
   
   const cookieOptions = getCookieOptions();
-  console.log("Cookie Options applied:", cookieOptions);
 
   if (accessToken) {
     res.cookie('accessToken', accessToken, {
@@ -37,7 +34,6 @@ const setAuthCookies = (res, accessToken, refreshToken) => {
     });
   }
   
-  console.log("=== DEBUG: Cookies successfully attached to response ===");
 };
 
 const clearAuthCookies = (res) => {
@@ -137,21 +133,6 @@ export const loginUser = async (req, res) => {
       
       setAuthCookies(res, accessToken, refreshToken);
       
-      console.log("=== DEBUG: loginUser ===");
-      console.log("Generated access token snippet:", accessToken.substring(0, 10) + "...");
-      console.log("Generated refresh token snippet:", refreshToken.substring(0, 10) + "...");
-      console.log("Saved DB refresh token snippet:", user.refreshToken.substring(0, 10) + "...");
-
-      // res.json({
-      //   _id: user._id,
-      //   name: user.name,
-      //   email: user.email,
-      //   countryCode: user.countryCode,
-      //   mobile: user.mobile,
-      //   role: user.role,
-      //   membership: user.membership,
-      //   token: generateToken(user._id),
-      // });
       res.json({
         _id: user._id,
         name: user.name,
@@ -310,9 +291,6 @@ export const sendOTP = async (req, res) => {
     };
     await req.session.save();
 
-    // console.log("Session ID:", req.sessionID);
-    // console.log("Session:", req.session);
-
     res.json({message: "OTP send"})
     
   } catch (error) {
@@ -334,10 +312,6 @@ export const resetPassword = async (req, res) => {
     };
 
     const resetData = req.session.resetData;
-
-    // console.log("Session ID:", req.sessionID);
-    // console.log("Session:", req.session);
-    // console.log("Reset Data:", req.session.resetData);
 
     if (!resetData) {
       return res.status(400).json({
@@ -422,9 +396,6 @@ export const refreshUserToken = async (req, res) => {
         user.refreshToken = null;
         await user.save();
       }
-      console.log("=== DEBUG: refreshUserToken Mismatch ===");
-      console.log("Presented Token:", presentedToken ? presentedToken.substring(0, 10) + "..." : "undefined");
-      console.log("DB Token:", user.refreshToken ? user.refreshToken.substring(0, 10) + "..." : "null");
       
       clearAuthCookies(res);
       return res.status(401).json({ message: 'Not authorized, token mismatch' });
