@@ -12,8 +12,9 @@ PROJECT_DIR="/home/ubuntu/Ella_Fitness_Centre"
 echo "Moving to project..."
 cd "$PROJECT_DIR"
 
-echo "Pulling latest code..."
-git pull origin main
+echo "Updating repository..."
+git fetch origin
+git reset --hard origin/main
 
 echo "Installing backend dependencies..."
 cd backend
