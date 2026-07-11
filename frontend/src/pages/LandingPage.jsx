@@ -31,7 +31,7 @@ const LandingPage = () => {
     { title: 'Cardio Zone', desc: 'Premium treadmills, ellipticals, and climbmills with high-tech displays.', icon: Heart },
     { title: 'Weight Training', desc: 'Premium dumbbells up to 70kg, multi-racks, and plate-loaded machines.', icon: Trophy },
     { title: 'Functional Training', desc: 'Sled tracks, kettlebells, battle ropes, and specialized crossfit cages.', icon: Zap },
-    { title: 'Locker Facility', desc: 'Keyless electronic lockers, luxury steam showers, and vanity counters.', icon: Shield },
+    // { title: 'Locker Facility', desc: 'Keyless electronic lockers, luxury steam showers, and vanity counters.', icon: Shield },
     { title: 'Personal Training', desc: 'One-on-one sessions with certified elite transformation coaches.', icon: Users }
   ];
 
