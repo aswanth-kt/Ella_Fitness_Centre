@@ -8,7 +8,6 @@ export const membershipPlans = [
     benefits: [
       "Full gym floor access",
       "Personalized fitness assessment",
-      "Locker facility",
       "Access to group classes",
     ],
   },
@@ -23,7 +22,6 @@ export const membershipPlans = [
       "Full gym floor access",
       "No admission fee charged",
       "1 free trainer consultation",
-      "Locker facility",
     ],
   },
   {
@@ -39,7 +37,6 @@ export const membershipPlans = [
       "₹700 instant discount applied",
       "Dedicated trainer guidance",
       "Free diet consultation",
-      "Locker facility",
     ],
   },
   {
@@ -55,7 +52,6 @@ export const membershipPlans = [
       "₹1,500 instant discount applied",
       "Priority trainer support",
       "Free diet & nutrition plan",
-      "Locker facility",
       "Complimentary gym merchandise",
     ],
   },
@@ -72,7 +68,6 @@ export const membershipPlans = [
       "Full gym floor access",
       "Valid up to Class 12",
       "Basic fitness guidance",
-      "Locker facility",
     ],
   },
 ];
