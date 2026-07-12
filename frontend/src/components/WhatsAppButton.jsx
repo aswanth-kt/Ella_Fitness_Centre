@@ -2,7 +2,14 @@ import { motion } from 'framer-motion';
 import { whatsapp_number } from '../constants/constants';
 
 export const WhatsAppButton = () => {
-  const whatsappUrl = `https://wa.me/${whatsapp_number}?text=Hello%2C%20I%27m%20interested%20in%20joining%20your%20gym.%20Could%20you%20please%20provide%20details%20about%20membership%20plans%2C%20fees%2C%20and%20any%20current%20offers%3F%20Thank%20you.`; // Dynamic chat link
+  const message = `Hello,
+
+  I'm interested in joining your gym.
+  Could you please provide details about membership plans, fees, and any current offers?
+
+  Thank you.`;
+  
+  const whatsappUrl = `https://wa.me/${whatsapp_number}?text=${encodeURIComponent(message)}`;
 
   return (
     <motion.a

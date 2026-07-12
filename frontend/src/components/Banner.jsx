@@ -101,7 +101,7 @@ export default function Banner({ handleJoinClick }) {
                   <ChevronRight className="h-5 w-5" />
                 </button>
 
-                <a>
+                <a
                   href="#plans"
                   className="glass border border-gold/30 text-white font-semibold
                             text-center py-4 px-8 rounded-full hover:bg-gold/10

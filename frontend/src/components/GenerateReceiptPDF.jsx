@@ -9,7 +9,6 @@ export function GenerateReceiptPDF(receiptData) {
   // ── Color palette ──────────────────────────────────────────────
   const BLACK     = [10, 10, 10];
   const RED       = [225, 29, 72];
-  const RED_DARK  = [159, 18, 57];
   const WHITE     = [255, 255, 255];
   const OFFWHITE  = [250, 250, 252];
   const LGRAY     = [230, 230, 235];
