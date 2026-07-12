@@ -59,8 +59,9 @@ const Navbar = () => {
                 <button onClick={() => scrollToSection('hero')} className="cursor-pointer text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-wide">HOME</button>
                 <button onClick={() => scrollToSection('about')} className="cursor-pointer text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-wide">ABOUT</button>
                 <button onClick={() => scrollToSection('facilities')} className="cursor-pointer text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-wide">FACILITIES</button>
-                <button onClick={() => scrollToSection('trainers')} className="cursor-pointer text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-wide">TRAINERS</button>
                 <button onClick={() => scrollToSection('plans')} className="cursor-pointer text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-wide">PLANS</button>
+                <button onClick={() => scrollToSection('gallery')} className="cursor-pointer text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-wide">GALLERY</button>
+                <button onClick={() => scrollToSection('trainers')} className="cursor-pointer text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-wide">TRAINERS</button>
               </>
             ) : null}
 

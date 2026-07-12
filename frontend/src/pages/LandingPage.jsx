@@ -10,6 +10,7 @@ import {
 import banner from '../assets/banner/bannerImage.png'
 import { address, email, google_map_location, gym_first_name, gym_full_name, phone_number, whatsapp_number } from '../constants/constants';
 import { membershipPlans } from '../constants/membershipPlans';
+import GallerySection from '../components/GallerySection';
 
 const LandingPage = () => {
   const { user } = useContext(AuthContext);
@@ -368,6 +369,9 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+
+      {/* Gallery section */}
+      <GallerySection />
 
       {/* 6. Transformation Stories */}
       <section id="transformations" className="py-24 bg-deep-black relative">
