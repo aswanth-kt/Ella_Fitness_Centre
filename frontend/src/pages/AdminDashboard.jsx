@@ -212,7 +212,7 @@ const AdminDashboard = () => {
         fetchMembers(),
         fetchPayments(),
         fetchDailyAttendance(),
-        fetchPendingVerifications()
+        fetchPendingVerifications(),
       ]);
       setLoading(false);
     };
@@ -493,6 +493,7 @@ const AdminDashboard = () => {
                 fetchMembers(),
                 fetchPayments(),
                 fetchDailyAttendance(),
+                fetchPendingVerifications(),
               ]);
               if (activeTab === "reminders") await fetchPendingReminders();
               setLoading(false);

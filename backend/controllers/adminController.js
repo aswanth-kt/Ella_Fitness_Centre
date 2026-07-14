@@ -7,7 +7,7 @@ import { sendWhatsAppMessage } from '../services/whatsappService.js';
 import { gym_first_name, gym_full_name } from '../../frontend/src/constants/constants.js';
 import { invoice_pagination_limit, members_pagination_limit, reminder_pagination_limit } from '../const/constants.js';
 import { generateInvoiceNumber } from '../utils/invoiceGenerator.js';
-import { MEMBERSHIP_PLANS } from '../const/membershipPlans.js';
+import { MEMBERSHIP_PLANS, ONE_MONTH_DURATION } from '../const/membershipPlans.js';
 
 // Helper to normalize dates
 const getStartOfDay = (date) => {
@@ -687,8 +687,9 @@ export const verifyManualPayment = async (req, res) => {
     payment.verifiedAt = new Date();
     await payment.save();
 
-    // Extend the member's plan
-    const months = MEMBERSHIP_PLANS[payment.markModified] ?? 1;
+
+    /*
+    console.log("months:", months, "duration mnth:", months.durationMonths)
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     const user = await User.findById(payment.user);
@@ -709,6 +710,61 @@ export const verifyManualPayment = async (req, res) => {
       plan: payment.membershipPlan,
       startDate: user.membership?.status === 'active' ? user.membership.startDate : now,
       endDate: newEnd,
+      status: 'active',
+    };
+    await user.save();
+    */
+
+    // Extend the member's plan
+    const plan = MEMBERSHIP_PLANS[payment.membershipPlan];
+    if (!plan) {
+      return res.status(400).json({ message: "Invalid membership plan." });
+    }
+
+    const months = plan.durationMonths;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const user = await User.findById(payment.user);
+
+    // Use previous end date only if membership is still active (Advance payment)
+    let startDate = today;
+
+    if (
+      user.membership?.status === 'active' &&
+      user.membership?.endDate
+    ) {
+      const previousEnd = new Date(user.membership.endDate);
+      previousEnd.setHours(0, 0, 0, 0);
+
+      if (previousEnd > today) {
+        startDate = previousEnd;
+      };
+    };
+
+    // Add 30 days per month
+    const days = months * ONE_MONTH_DURATION; // 3 * 30 = 90 days
+    const endDate = new Date(startDate);
+
+    // if new member ? today + (90 - 1) = 90 days : today + 90 = 90 days
+    if (
+      user.membership?.status === 'none' &&
+      user.membership?.plan === 'none'
+    ) {
+      endDate.setDate(endDate.getDate() + (days - 1)); // today + 90 - 1 = 90 days
+    } else {
+      endDate.setDate(endDate.getDate() + (days)); // today(is the last day) + 90 = 91 days
+    }
+
+    console.log("Start:", startDate);
+    console.log("End:", endDate);
+
+    user.membership = {
+      plan: payment.membershipPlan,
+      startDate: user.membership?.status === 'active'
+        ? user.membership?.startDate
+        : today,
+      endDate,
       status: 'active',
     };
     await user.save();
