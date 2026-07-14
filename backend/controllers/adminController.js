@@ -7,6 +7,7 @@ import { sendWhatsAppMessage } from '../services/whatsappService.js';
 import { gym_first_name, gym_full_name } from '../../frontend/src/constants/constants.js';
 import { invoice_pagination_limit, members_pagination_limit, reminder_pagination_limit } from '../const/constants.js';
 import { generateInvoiceNumber } from '../utils/invoiceGenerator.js';
+import { MEMBERSHIP_PLANS } from '../const/membershipPlans.js';
 
 // Helper to normalize dates
 const getStartOfDay = (date) => {
@@ -645,5 +646,109 @@ export const sendManualReminder = async (req, res) => {
 
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get all pending_verification payments
+// @route   GET /api/admin/pendings
+// @access  Private/Admin
+export const getPendingVerifications = async (req, res) => {
+  try {
+    const pending = await Payment.find({ status: 'pending_verification' })
+    .populate('user', 'name email, mobile, countryCode')
+    .sort({ createdAt: -1 });
+
+    res.json(pending);
+
+  } catch (error) {
+    console.error('getPendingVerifications error:', error);
+    res.status(500).json({ message: 'Failed to fetch pending payments.' });
+  }
+};
+
+
+// @desc    Update pending verification to verify
+// @route   POST /api/payments/admin/:id/verify
+// @access  Private/Admin
+export const verifyManualPayment = async (req, res) => {
+  try {
+    const payment = await Payment.findById(req.params.id);
+    if (!payment) return res.status(404).json({ message: 'Payment not found.' });
+    if (payment.status !== 'pending_verification') {
+      return res.status(400).json({ message: `Payment is already ${payment.status}.` });
+    };
+
+    const invoiceNo = await generateInvoiceNumber();
+
+    payment.status = 'paid';
+    payment.paidAt = new Date();
+    payment.invoiceNo = invoiceNo;
+    payment.verifiedBy = req.user._id;
+    payment.verifiedAt = new Date();
+    await payment.save();
+
+    // Extend the member's plan
+    const months = MEMBERSHIP_PLANS[payment.markModified] ?? 1;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const user = await User.findById(payment.user);
+
+    // If membership is still active, extend from current endDate; otherwise start fresh from today
+    const  currentEnd = user.membership.endDate && user.membership.status === 'active'
+    ? new Date(user.membership.endDate)
+    : now;
+    const startBase = currentEnd > now ? currentEnd : now;
+
+    const newEnd = new Date(startBase);
+    newEnd.setHours(0, 0, 0, 0);
+    newEnd.setMonth(newEnd.getMonth() + months);
+    console.log("start date:", now)
+    console.log("end date:", newEnd)
+
+    user.membership = {
+      plan: payment.membershipPlan,
+      startDate: user.membership?.status === 'active' ? user.membership.startDate : now,
+      endDate: newEnd,
+      status: 'active',
+    };
+    await user.save();
+
+    res.json({
+      message: 'Payment verified and membership activated.',
+      payment
+    })
+
+  } catch (error) {
+    console.error('verifyManualPayment error:', error);
+    res.status(500).json({ message: 'Failed to verify payment.' });
+  }
+};
+
+// @desc    Update pending verification to reject
+// @route   POST /api/payments/admin/:id/reject
+// @access  Private/Admin
+export const rejectManualPayment = async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const payment = await Payment.findById(req.params.id);
+    if (!payment) return res.status(404).json({ message: 'Payment not found.' });
+    if (payment.status !== 'pending_verification') {
+      return res.status(400).json({ message: `Payment is already ${payment.status}.` });
+    };
+
+    payment.status = 'failed';
+    payment.rejectionReason = reason || 'Rejected by admin.';
+    payment.verifiedBy = req.user._id;
+    payment.verifiedAt = new Date();
+    await payment.save();
+
+    res.json({
+      message: 'Payment rejected.', 
+      payment
+    })
+
+  } catch (error) {
+    console.error('rejectManualPayment error:', error);
+    res.status(500).json({ message: 'Failed to reject payment.' });
   }
 };

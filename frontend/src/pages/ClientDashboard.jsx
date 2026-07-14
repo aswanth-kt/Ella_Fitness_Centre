@@ -7,12 +7,14 @@ import {
   Receipt,
 } from 'lucide-react';
 import axios from '../api/axios.js';
-import { attendence_pagination_limit, gym_first_name, gym_full_name } from '../constants/constants';
-import gymImage from '../assets/banner/bannerImage.png'
+import { attendence_pagination_limit, gym_first_name, upiUrl } from '../constants/constants';
 import { membershipPlans } from '../constants/membershipPlans.js';
 import { healthIssuesList } from '../constants/healthIssues.js';
 import GymTermsConditions from '../components/GymTermsConditions.jsx';
 import PaymentReceiptModal from '../components/PaymentReceiptModal.jsx';
+import PaymentMethodModal from '../components/paymentConfirmation/PaymentMethodModal.jsx';
+import UpiPaymentModal from '../components/paymentConfirmation/UpiPaymentModal.jsx';
+import PendingVerificationModal from '../components/paymentConfirmation/PendingVerificationModal.jsx';
 import Pagination from '../components/Pagination.jsx';
 import { countryCodes } from '../constants/countryCodes.js';
 import { validateAge, validateCountryCode, validateMobileNumber, validatePassword } from '../helpers/validators.js';
@@ -57,6 +59,11 @@ const ClientDashboard = () => {
   const [showRenewalModal, setShowRenewalModal] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState('');
   const [renewalError, setRenewalError] = useState('');
+  const [selectedPlan, setSelectedPlan] = useState(null); // the plan object user chose
+  const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
+  const [showUpiPaymentModal, setShowUpiPaymentModal] = useState(false);
+  const [showPendingModal, setShowPendingModal] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState(null); // 'upi' | 'cash'
 
   // Receipt states
   const [showReceipt, setShowReceipt] = useState(false);
@@ -121,75 +128,75 @@ const ClientDashboard = () => {
   }, [user, attendancePage]);
 
   // Dynamically load Razorpay SDK script
-  const loadRazorpayScript = () => {
-    return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
+  // const loadRazorpayScript = () => {
+  //   return new Promise((resolve) => {
+  //     const script = document.createElement('script');
+  //     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+  //     script.onload = () => resolve(true);
+  //     script.onerror = () => resolve(false);
+  //     document.body.appendChild(script);
+  //   });
+  // };
 
-  const handleRenewalPurchase = async (planId) => { 
-    setLoadingPlan(planId);
-    setRenewalError('');
+  // const handleRenewalPurchase = async (planId) => { 
+  //   setLoadingPlan(planId);
+  //   setRenewalError('');
 
-    try {
-      // Create order in backend
-      const { data: orderData } = await axios.post('/payments/order', { planName: planId });
+  //   try {
+  //     // Create order in backend
+  //     const { data: orderData } = await axios.post('/payments/order', { planName: planId });
 
-      // Load Razorpay SDK
-      await loadRazorpayScript();
+  //     // Load Razorpay SDK
+  //     await loadRazorpayScript();
 
-      // Launch Razorpay checkout
-      const options = {
-        key: orderData.key,
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: `${gym_full_name}`,
-        description: `Renewal activation of ${planId.toUpperCase()} membership plan`,
-        image: {gymImage},
-        order_id: orderData.id,
-        handler: async (response) => {
-          try {
-            const verifyPayload = {
-              razorpayOrderId: response.razorpay_order_id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature,
-              planName: planId,
-            };
+  //     // Launch Razorpay checkout
+  //     const options = {
+  //       key: orderData.key,
+  //       amount: orderData.amount,
+  //       currency: orderData.currency,
+  //       name: `${gym_full_name}`,
+  //       description: `Renewal activation of ${planId.toUpperCase()} membership plan`,
+  //       image: {gymImage},
+  //       order_id: orderData.id,
+  //       handler: async (response) => {
+  //         try {
+  //           const verifyPayload = {
+  //             razorpayOrderId: response.razorpay_order_id,
+  //             razorpayPaymentId: response.razorpay_payment_id,
+  //             razorpaySignature: response.razorpay_signature,
+  //             planName: planId,
+  //           };
 
-            await axios.post('/payments/verify', verifyPayload);
-            await refreshUser();
-            setShowRenewalModal(false);
-            setSuccessMsg('Membership renewed and extended successfully!');
-            fetchDashboardData();
+  //           await axios.post('/payments/verify', verifyPayload);
+  //           await refreshUser();
+  //           setShowRenewalModal(false);
+  //           setSuccessMsg('Membership renewed and extended successfully!');
+  //           fetchDashboardData();
 
-          } catch (err) {
-            setRenewalError(err.response?.data?.message || 'Payment verification failed.');
-          }
-        },
-        prefill: {
-          name: user.name,
-          email: user.email,
-          contact: user.mobile
-        },
-        theme: {
-          color: 'var(--color-gold)'
-        }
-      };
+  //         } catch (err) {
+  //           setRenewalError(err.response?.data?.message || 'Payment verification failed.');
+  //         }
+  //       },
+  //       prefill: {
+  //         name: user.name,
+  //         email: user.email,
+  //         contact: user.mobile
+  //       },
+  //       theme: {
+  //         color: 'var(--color-gold)'
+  //       }
+  //     };
 
-      const paymentObject = new window.Razorpay(options);
-      paymentObject.open();
+  //     const paymentObject = new window.Razorpay(options);
+  //     paymentObject.open();
 
-    } catch (err) {
-      console.error(err);
-      setRenewalError(err.response?.data?.message || 'Error processing renewal.');
-    } finally {
-      setLoadingPlan('');
-    }
-  };
+  //   } catch (err) {
+  //     console.error(err);
+  //     setRenewalError(err.response?.data?.message || 'Error processing renewal.');
+  //   } finally {
+  //     setLoadingPlan('');
+  //   }
+  // };
 
   // Remaining days math helper
   const getRemainingDays = () => {
@@ -821,6 +828,65 @@ const ClientDashboard = () => {
         )}
       </div>
 
+      {/*  Select payment method */}
+      <PaymentMethodModal
+        isOpen={showPaymentMethodModal}
+        onClose={() => setShowPaymentMethodModal(false)}
+        onSelect={async (method) => {
+          setPaymentMethod(method);
+          setShowPaymentMethodModal(false);
+
+          if (method === 'upi') {
+            // kick off your existing UPI deep link
+            const txNote = encodeURIComponent(`Renewal Plan ${selectedPlan.id}`);
+            window.location.href = `${upiUrl}&tn=${txNote}`;
+            setShowUpiPaymentModal(true);
+          } else {
+            // cash goes straight to pending verification
+            try {
+              await axios.post('/payments/initiate-manual', {
+                planName: selectedPlan.id,
+                method: 'cash'
+              });
+              setShowPendingModal(true);
+            } catch (error) {
+              setRenewalError(error.response?.data?.message || 'Faild to start payment.')
+            }
+          }
+        }}
+      />
+
+      <UpiPaymentModal
+        isOpen={showUpiPaymentModal}
+        onClose={() => setShowUpiPaymentModal(false)}
+        amount={selectedPlan?.price}
+        planName={selectedPlan?.name}
+        onOpenUpiApp={() => {
+          const txNote = encodeURIComponent(`Renewal Plan ${selectedPlan?.id}`);
+          window.location.href = `${upiUrl}&tn=${txNote}`;
+        }}
+        onConfirmPaid={async () => {
+          await axios.post('/payments/initiate-manual', {
+            planName: selectedPlan.id,
+            method: 'upi'
+          });
+          setShowUpiPaymentModal(false);
+          setShowPendingModal(true);
+        }}
+      />
+
+      <PendingVerificationModal
+        isOpen={showPendingModal}
+        onClose={() => {
+          setShowPendingModal(false);
+          setSelectedPlan(null);
+          setPaymentMethod(null);
+        }}
+        paymentMethod={paymentMethod}
+        planName={selectedPlan?.name}
+        amount={selectedPlan?.price}
+      />
+
       {/* RENEW MEMBERSHIP PLAN SELECTOR MODAL */}
       {showRenewalModal && (
         <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/85 backdrop-blur-sm overflow-y-auto px-4 py-6 sm:py-10">
@@ -863,13 +929,26 @@ const ClientDashboard = () => {
                     </ul>
                   </div>
 
-                  <button
+                  {/* <button
                     disabled={loadingPlan !== ''}
                     onClick={() => handleRenewalPurchase(plan.id)}
                     className="w-full mt-6 py-2.5 bg-gradient-to-r from-premium-yellow to-gold text-deep-black font-bold text-xs tracking-wider rounded-xl hover:scale-[1.02] transition-transform cursor-pointer"
                   >
                     {loadingPlan === plan.id ? 'PROCESSING...' : 'ACTIVATE'}
+                  </button> */}
+
+                  <button
+                    disabled={loadingPlan !== ''}
+                    onClick={() => {
+                      setShowPaymentMethodModal(true);
+                      setSelectedPlan(plan);
+                      setShowRenewalModal(false);
+                    }}
+                    className="w-full mt-6 py-2.5 bg-gradient-to-r from-premium-yellow to-gold text-deep-black font-bold text-xs tracking-wider rounded-xl hover:scale-[1.02] transition-transform cursor-pointer"
+                  >
+                    {loadingPlan === plan.id ? 'PROCESSING...' : 'ACTIVATE'}
                   </button>
+
                 </div>
               ))}
             </div>

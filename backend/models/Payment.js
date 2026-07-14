@@ -4,13 +4,17 @@ const paymentSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     amount: { type: Number, required: true },
-    razorpayOrderId: { type: String, required: true },
-    razorpayPaymentId: { type: String },
-    status: { type: String, enum: ['pending', 'paid', 'failed'], default: 'pending' },
+    // razorpayOrderId: { type: String, required: true },
+    // razorpayPaymentId: { type: String },
+    manualPaymentId: { type: String },
+    status: { type: String, enum: ['pending', 'pending_verification', 'paid', 'failed'], default: 'pending' },
     paymentMethod: { type: String, enum: ['Online Transaction', 'Cash Transaction'], default: 'Online Transaction' },
     membershipPlan: { type: String },
     invoiceNo: { type: String, unique: true, sparse: true },
-    paidAt: { type: Date }
+    paidAt: { type: Date },
+    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // admin who approved/rejected
+    verifiedAt: { type: Date },
+    rejectionReason: { type: String },
   },
   { timestamps: true }
 );

@@ -3,7 +3,7 @@ import {
   Shield, Users, CheckCircle, CheckCircle2, AlertTriangle, Calendar, 
   IndianRupee, Search, Edit3, Trash2, Loader, 
   RefreshCw, AlertCircle, Plus, CreditCard,
-  Check,
+  Check, Hourglass, XCircle, Smartphone, Banknote, ThumbsUp,
 } from 'lucide-react';
 import axios from '../api/axios.js';
 import { 
@@ -96,6 +96,14 @@ const AdminDashboard = () => {
   const [reminderPage, setReminderPage] = useState(1);
   const [reminderTotalPage, setReminderTotalPage] = useState(1);
 
+  // Pending Payment Verifications (manual UPI/Cash renewals awaiting admin approval)
+  const [pendingVerifications, setPendingVerifications] = useState([]);
+  const [verificationLoading, setVerificationLoading] = useState(false);
+  const [verifyActionId, setVerifyActionId] = useState(''); // payment _id currently being approved/rejected
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectingPayment, setRejectingPayment] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
+
 
   // Load stats and database entities
   const fetchStats = async () => {
@@ -165,6 +173,18 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchPendingVerifications = async () => {
+    setVerificationLoading(true);
+    try {
+      const { data } = await axios.get('/admin/pending');
+      setPendingVerifications(data);
+    } catch (err) {
+      console.error('Error loading pending payment verifications:', err);
+    } finally {
+      setVerificationLoading(false);
+    }
+  };
+
   const fetchDailyAttendance = async () => {
     try {
       const { data } = await axios.get('/attendance/daily', {
@@ -191,7 +211,8 @@ const AdminDashboard = () => {
         fetchStats(),
         fetchMembers(),
         fetchPayments(),
-        fetchDailyAttendance()
+        fetchDailyAttendance(),
+        fetchPendingVerifications()
       ]);
       setLoading(false);
     };
@@ -225,6 +246,13 @@ const AdminDashboard = () => {
       fetchPendingReminders();
     }
   }, [activeTab, reminderSearch, reminderStatusFilter, reminderPage]);
+
+  // Sync pending payment verification tab
+  useEffect(() => {
+    if (activeTab === 'verifications') {
+      fetchPendingVerifications();
+    }
+  }, [activeTab]);
 
   // Mark manual WhatsApp renewal reminder
   const sendManualWhatsApp = async (userId) => {
@@ -282,6 +310,55 @@ const AdminDashboard = () => {
     }
   };
 
+
+  // Approve a pending manual (UPI/Cash) payment and activate the membership
+  const approvePendingPayment = async (paymentId) => {
+    setVerifyActionId(paymentId);
+    setErrorMsg('');
+    setSuccessMsg('');
+    try {
+      const { data } = await axios.post(`/admin/${paymentId}/verify`);
+      setSuccessMsg(data.message || 'Payment verified and membership activated.');
+      setTimeout(() => setSuccessMsg(''), 4000);
+      await Promise.all([fetchPendingVerifications(), fetchMembers(), fetchStats(), fetchPayments()]);
+    } catch (err) {
+      setErrorMsg(err.response?.data?.message || 'Failed to verify payment.');
+    } finally {
+      setVerifyActionId('');
+    }
+  };
+
+  // Open the rejection reason modal for a specific pending payment
+  const openRejectModal = (payment) => {
+    setRejectingPayment(payment);
+    setRejectReason('');
+    setRejectModalOpen(true);
+  };
+
+  // Submit rejection with reason
+  const submitRejectPayment = async (e) => {
+    e.preventDefault();
+    if (!rejectingPayment) return;
+
+    setVerifyActionId(rejectingPayment._id);
+    setErrorMsg('');
+    setSuccessMsg('');
+    try {
+      const { data } = await axios.post(`/admin/${rejectingPayment._id}/reject`, {
+        reason: rejectReason,
+      });
+      setSuccessMsg(data.message || 'Payment rejected.');
+      setTimeout(() => setSuccessMsg(''), 4000);
+      setRejectModalOpen(false);
+      setRejectingPayment(null);
+      setRejectReason('');
+      await Promise.all([fetchPendingVerifications(), fetchPayments()]);
+    } catch (err) {
+      setErrorMsg(err.response?.data?.message || 'Failed to reject payment.');
+    } finally {
+      setVerifyActionId('');
+    }
+  };
 
   // fetch last payment details for fill edit form.
   const fetchLastPayment = async (userId) => {
@@ -435,17 +512,23 @@ const AdminDashboard = () => {
             { id: "attendance", label: "ATTENDANCE BOARD" },
             { id: "payments", label: "INVOICES & REVENUE" },
             { id: "reminders", label: "RENEWAL REMINDERS" },
+            { id: "verifications", label: "PENDING PAYMENTS" },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-4 px-6 font-bold text-xs tracking-wider border-b-2 transition-all ${
+              className={`py-4 px-6 font-bold text-xs tracking-wider border-b-2 transition-all flex items-center gap-2 ${
                 activeTab === tab.id
                   ? "border-gold text-gold bg-gold/5"
                   : "border-transparent text-gray-400 hover:text-white"
               }`}
             >
-              {tab.label}
+              <span>{tab.label}</span>
+              {tab.id === "verifications" && pendingVerifications.length > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-extrabold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                  {pendingVerifications.length}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -1436,6 +1519,127 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
+
+        {/* T6: Pending Payment Verifications (Manual UPI / Cash renewals awaiting admin approval) */}
+        {activeTab === "verifications" && (
+          <div className="glass-premium rounded-2xl border border-gold/15 p-6 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Hourglass className="h-5 w-5 text-gold" />
+                  <span>Pending Payment Verifications</span>
+                </h3>
+                <p className="text-xs text-gray-400 mt-1">
+                  Manual UPI and Cash renewals awaiting confirmation before membership activation.
+                </p>
+              </div>
+              <button
+                onClick={fetchPendingVerifications}
+                disabled={verificationLoading}
+                className="flex items-center space-x-2 border border-gold/20 hover:bg-gold/10 text-gold text-[10px] tracking-widest font-bold px-4 py-2.5 rounded-full transition-colors cursor-pointer self-start sm:self-auto"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${verificationLoading ? 'animate-spin' : ''}`} />
+                <span>REFRESH</span>
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/10 text-xs text-gray-400 font-bold uppercase tracking-wider">
+                    <th className="py-4">Requested On</th>
+                    <th className="py-4">Member Info</th>
+                    <th className="py-4">Membership Plan</th>
+                    <th className="py-4">Method</th>
+                    <th className="py-4">Amount</th>
+                    <th className="py-4 text-center">Status</th>
+                    <th className="py-4 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-sm text-gray-300">
+                  {verificationLoading ? (
+                    <tr>
+                      <td colSpan="7" className="py-10 text-center">
+                        <Loader className="h-6 w-6 text-gold animate-spin mx-auto" />
+                      </td>
+                    </tr>
+                  ) : pendingVerifications.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="py-8 text-center text-gray-500 text-xs">
+                        No payments awaiting verification. All caught up.
+                      </td>
+                    </tr>
+                  ) : (
+                    pendingVerifications.map((p) => {
+                      const isUpi = p.paymentMethod === 'UPI Transaction';
+                      const isBusy = verifyActionId === p._id;
+                      return (
+                        <tr key={p._id} className="hover:bg-white/5 transition-colors">
+                          <td className="py-4 font-semibold text-gray-300 text-xs">
+                            {new Date(p.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </td>
+                          <td className="py-4">
+                            {p.user ? (
+                              <>
+                                <div className="font-bold text-white">{p.user.name}</div>
+                                <div className="text-xs text-gray-500">{p.user.countryCode} {p.user.mobile}</div>
+                              </>
+                            ) : (
+                              <span className="text-gray-500 font-light italic">Deleted User</span>
+                            )}
+                          </td>
+                          <td className="py-4 font-semibold text-white capitalize">
+                            {p.membershipPlan || 'N/A'}
+                          </td>
+                          <td className="py-4">
+                            <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase border ${
+                              isUpi
+                                ? 'bg-gold/10 text-gold border-gold/20'
+                                : 'bg-white/10 text-white border-white/15'
+                            }`}>
+                              {isUpi ? <Smartphone className="h-3 w-3" /> : <Banknote className="h-3 w-3" />}
+                              {isUpi ? 'UPI' : 'Cash'}
+                            </span>
+                          </td>
+                          <td className="py-4 font-extrabold text-white">
+                            ₹{p.amount?.toLocaleString()}
+                          </td>
+                          <td className="py-4 text-center">
+                            <span className="inline-block text-[10px] font-bold px-2.5 py-1 rounded-full uppercase bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
+                              Pending Verification
+                            </span>
+                          </td>
+                          <td className="py-4">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                disabled={isBusy}
+                                onClick={() => approvePendingPayment(p._id)}
+                                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[10px] font-extrabold tracking-wide uppercase bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500 hover:text-deep-black transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Approve & Activate"
+                              >
+                                {isBusy ? <Loader className="h-3.5 w-3.5 animate-spin" /> : <ThumbsUp className="h-3.5 w-3.5" />}
+                                <span>Approve</span>
+                              </button>
+                              <button
+                                disabled={isBusy}
+                                onClick={() => openRejectModal(p)}
+                                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[10px] font-extrabold tracking-wide uppercase bg-red-500/10 text-red-400 border border-red-500/25 hover:bg-red-500 hover:text-white transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Reject"
+                              >
+                                <XCircle className="h-3.5 w-3.5" />
+                                <span>Reject</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* EDIT MEMBER OVERLAY MODAL */}
@@ -2187,6 +2391,85 @@ const AdminDashboard = () => {
                   type="button"
                   onClick={() => setAddModalOpen(false)}
                   className="px-6 py-3.5 border border-gold/20 text-gold font-bold text-xs tracking-wider rounded-xl hover:bg-gold/10 transition-colors"
+                >
+                  CANCEL
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* REJECT PAYMENT MODAL (with reason input) */}
+      {rejectModalOpen && rejectingPayment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm px-4 py-6">
+          <div className="glass-premium border border-gold/30 rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 animate-fade-in-up">
+
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-gold/10 pb-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 rounded-xl bg-red-500/15 text-red-400 border border-red-500/20 shrink-0">
+                  <XCircle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Reject Payment</h3>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {rejectingPayment.user?.name || 'This member'}'s {rejectingPayment.paymentMethod === 'UPI Transaction' ? 'UPI' : 'Cash'} payment of ₹{rejectingPayment.amount?.toLocaleString()} will be marked as failed.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setRejectModalOpen(false);
+                  setRejectingPayment(null);
+                  setRejectReason('');
+                }}
+                className="text-gray-400 hover:text-white p-1.5 rounded-full hover:bg-white/5 transition-colors cursor-pointer shrink-0"
+                aria-label="Close"
+              >
+                <XCircle className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={submitRejectPayment} className="space-y-5">
+              <div>
+                <label className="block text-xs font-bold tracking-wider text-gray-400 uppercase mb-2">
+                  Reason for Rejection
+                </label>
+                <textarea
+                  required
+                  rows="3"
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="e.g. No matching UPI transaction found, incorrect amount, etc."
+                  className="block w-full px-4 py-3 bg-black/40 border border-red-500/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-red-400 transition-colors text-sm"
+                />
+                <p className="text-[10px] text-gray-500 mt-1.5">This reason is visible to the member on their dashboard.</p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={verifyActionId === rejectingPayment._id}
+                  className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white font-bold text-xs tracking-wider rounded-xl hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                >
+                  {verifyActionId === rejectingPayment._id ? (
+                    <>
+                      <Loader className="h-4 w-4 animate-spin" />
+                      <span>REJECTING...</span>
+                    </>
+                  ) : (
+                    <span>CONFIRM REJECTION</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRejectModalOpen(false);
+                    setRejectingPayment(null);
+                    setRejectReason('');
+                  }}
+                  className="px-6 py-3.5 border border-gold/20 text-gold font-bold text-xs tracking-wider rounded-xl hover:bg-gold/10 transition-colors cursor-pointer"
                 >
                   CANCEL
                 </button>
