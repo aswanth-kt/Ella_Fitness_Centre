@@ -1336,7 +1336,7 @@ const AdminDashboard = () => {
                           {p.paymentMethod || "Online Transaction"}
                         </td>
                         <td className="py-4 font-mono text-xs">
-                          <div>Order: {p.razorpayOrderId}</div>
+                          <div>ID: {p.manualPaymentId}</div>
                           {p.razorpayPaymentId && (
                             <div className="text-[10px] text-gray-500 mt-0.5">
                               PayID: {p.razorpayPaymentId}

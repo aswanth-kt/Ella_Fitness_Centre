@@ -450,7 +450,7 @@ export const triggerExpiryReminders = async (req, res) => {
 // @access  Private/Admin
 export const createMember = async (req, res) => {
   const {
-    name, email, mobile, password, age, gender, address, emergencyContact,
+    name, email, countryCode, mobile, password, age, gender, address, emergencyContact,
     height, weight,
     membership, // { plan, startDate, endDate, status }
     payment // { amount, paymentMethod }
@@ -465,6 +465,7 @@ export const createMember = async (req, res) => {
     const newUser = await User.create({
       name,
       email,
+      countryCode,
       mobile,
       password,
       role: 'client',
