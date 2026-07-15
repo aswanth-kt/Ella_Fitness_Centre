@@ -1572,7 +1572,7 @@ const AdminDashboard = () => {
                     </tr>
                   ) : (
                     pendingVerifications.map((p) => {
-                      const isUpi = p.paymentMethod === 'UPI Transaction';
+                      const isUpi = p.paymentMethod === 'Online Transaction';
                       const isBusy = verifyActionId === p._id;
                       return (
                         <tr key={p._id} className="hover:bg-white/5 transition-colors">
@@ -1584,6 +1584,7 @@ const AdminDashboard = () => {
                               <>
                                 <div className="font-bold text-white">{p.user.name}</div>
                                 <div className="text-xs text-gray-500">{p.user.countryCode} {p.user.mobile}</div>
+                                <div className="text-xs text-gray-500">ID: {p.manualPaymentId}</div>
                               </>
                             ) : (
                               <span className="text-gray-500 font-light italic">Deleted User</span>

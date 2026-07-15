@@ -1,5 +1,4 @@
 import crypto from 'crypto';
-import razorpayInstance from '../config/razorpay.js';
 import Payment from '../models/Payment.js';
 import User from '../models/User.js';
 import { MEMBERSHIP_PLANS, ONE_MONTH_DURATION } from '../const/membershipPlans.js';

@@ -655,7 +655,7 @@ export const sendManualReminder = async (req, res) => {
 export const getPendingVerifications = async (req, res) => {
   try {
     const pending = await Payment.find({ status: 'pending_verification' })
-    .populate('user', 'name email, mobile, countryCode')
+    .populate('user', 'name email countryCode mobile')
     .sort({ createdAt: -1 });
 
     res.json(pending);
@@ -754,10 +754,7 @@ export const verifyManualPayment = async (req, res) => {
       endDate.setDate(endDate.getDate() + (days - 1)); // today + 90 - 1 = 90 days
     } else {
       endDate.setDate(endDate.getDate() + (days)); // today(is the last day) + 90 = 91 days
-    }
-
-    console.log("Start:", startDate);
-    console.log("End:", endDate);
+    };
 
     user.membership = {
       plan: payment.membershipPlan,

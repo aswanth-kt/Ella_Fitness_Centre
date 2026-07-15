@@ -556,7 +556,7 @@ const ClientDashboard = () => {
                         </div>
                         <div className="flex justify-between items-end">
                           <div>
-                            <span className="text-[10px] text-gray-400 block">ID: {p.razorpayOrderId}</span>
+                            <span className="text-[10px] text-gray-400 block">ID: {p.manualPaymentId}</span>
                             {p.razorpayPaymentId && <span className="text-[9px] text-gray-500 block">Txn: {p.razorpayPaymentId}</span>}
                             {p.paymentMethod && <span className="text-[9px] text-gold/80 block uppercase mt-0.5">{p.paymentMethod}</span>}
                           </div>
