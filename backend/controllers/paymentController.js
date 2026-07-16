@@ -3,7 +3,6 @@ import Payment from '../models/Payment.js';
 import User from '../models/User.js';
 import { MEMBERSHIP_PLANS, ONE_MONTH_DURATION } from '../const/membershipPlans.js';
 import { generateInvoiceNumber } from '../utils/invoiceGenerator.js';
-import { membershipPlans } from '../../frontend/src/constants/membershipPlans.js';
 
 
 // @desc    Initiate manual payment
@@ -15,7 +14,7 @@ export const initiateManualPayment = async (req, res) => {
       return res.status(400).json({ message: 'planName and a valid method (upi/cash) are required.' });
     };
 
-    const plan = membershipPlans.find((p) => p.id === planName);
+    const plan = MEMBERSHIP_PLANS[planName];
     if (!plan) {
       return res.status(400).json({ message: 'Invalid membership plan.' });
     };
@@ -24,7 +23,8 @@ export const initiateManualPayment = async (req, res) => {
 
     const payment = await Payment.create({
       user: req.user._id,
-      amount: Number(plan.price.replace(/,/g, '')), // convert string '1,000' to number 1000
+      // amount: Number(plan.price.replace(/,/g, '')), // convert string '1,000' to number 1000
+      amount: Number(plan.priceInINR),
       manualPaymentId,
       status: 'pending_verification',
       paymentMethod: method === 'upi' ? 'Online Transaction' : 'Cash Transaction',
