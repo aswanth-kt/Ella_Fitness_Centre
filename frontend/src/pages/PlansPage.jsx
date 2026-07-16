@@ -1,91 +1,57 @@
 import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { CheckCircle2, Loader, AlertCircle } from 'lucide-react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 import axios from '../api/axios.js';
 import { membershipPlans } from '../constants/membershipPlans.js';
-import { gym_full_name } from '../constants/constants.js';
-import gymImage from '../assets/banner/bannerImage.png';
+import PaymentMethodModal from '../components/paymentConfirmation/PaymentMethodModal.jsx';
+import UpiPaymentModal from '../components/paymentConfirmation/UpiPaymentModal.jsx';
+import PendingVerificationModal from '../components/paymentConfirmation/PendingVerificationModal.jsx';
 
 const PlansPage = () => {
-  const { user, refreshUser } = useContext(AuthContext);
-  const [loadingPlan, setLoadingPlan] = useState('');
+  const { user } = useContext(AuthContext);
   const [error, setError] = useState('');
 
   const navigate = useNavigate();
 
-  // Dynamically load Razorpay SDK script
-  const loadRazorpayScript = () => {
-    return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
+  // Purchase flow states
+  const [selectedPlan, setSelectedPlan] = useState(null); // the plan object the member picked
+  const [paymentMethod, setPaymentMethod] = useState(null); // 'upi' | 'cash'
+  const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
+  const [showUpiPaymentModal, setShowUpiPaymentModal] = useState(false);
+  const [showPendingModal, setShowPendingModal] = useState(false);
 
-  const handlePurchase = async (planId) => {
+  // Kicks off the manual payment flow for a plan: choose UPI or Cash first
+  const openPurchaseFlow = (plan) => {
     if (!user) {
       navigate('/login');
       return;
     }
-
-    setLoadingPlan(planId);
     setError('');
+    setSelectedPlan(plan);
+    setShowPaymentMethodModal(true);
+  };
 
-    try {
-      // Create order in backend
-      const { data: orderData } = await axios.post('/payments/order', { planName: planId });
+  // Builds the UPI deep link for the currently selected plan
+  const buildUpiUrl = () => {
+    const txNote = encodeURIComponent(`Membership Plan ${selectedPlan?.id}`);
+    return `upi://pay?pa=aswanth@okhdfcbank&pn=Aswanth&cu=INR&tn=${txNote}`;
+  };
 
-      // Load SDK
-      await loadRazorpayScript();
+  // Creates the pending-verification payment record on the backend
+  const initiateManualPayment = async (method) => {
+    await axios.post('/payments/initiate-manual', {
+      planName: selectedPlan.id,
+      method, // 'upi' | 'cash'
+    });
+  };
 
-      // Real checkout
-      const options = {
-        key: orderData.key,
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: {gym_full_name},
-        description: `Activation of ${planId.toUpperCase()} membership plan`,
-        image: {gymImage},
-        order_id: orderData.id,
-        handler: async (response) => {
-          try {
-            const verifyPayload = {
-              razorpayOrderId: response.razorpay_order_id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature,
-              planName: planId,
-            };
-
-            await axios.post('/payments/verify', verifyPayload);
-            await refreshUser();
-            navigate('/dashboard', { state: { paymentSuccess: true } });
-
-          } catch (err) {
-            setError(err.response?.data?.message || 'Payment verification failed. Please contact support.');
-          }
-        },
-        prefill: {
-          name: user.name,
-          email: user.email,
-          contact: user.mobile
-        },
-        theme: {
-          color: '#D4AF37'
-        }
-      };
-
-      const paymentObject = new window.Razorpay(options);
-      paymentObject.open();
-
-    } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.message || 'Error processing your membership order.');
-    } finally {
-      setLoadingPlan('');
-    }
+  const resetPurchaseFlow = () => {
+    setSelectedPlan(null);
+    setPaymentMethod(null);
+    setShowPaymentMethodModal(false);
+    setShowUpiPaymentModal(false);
+    setShowPendingModal(false);
   };
 
   return (
@@ -187,24 +153,17 @@ const PlansPage = () => {
 
                 <div className="mt-8 pt-4">
                   <button 
-                    disabled={isActivePlan || loadingPlan !== ''}
-                    onClick={() => handlePurchase(p.id)}
+                    disabled={isActivePlan}
+                    onClick={() => openPurchaseFlow(p)}
                     className={`w-full py-4 rounded-full font-bold text-xs tracking-wider transition-all duration-300 flex justify-center items-center space-x-2 ${
                       isActivePlan
                         ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-not-allowed'
-                        : loadingPlan === p.id 
-                          ? 'bg-gold/30 text-gold cursor-wait'
-                          : p.isPopular 
-                            ? 'bg-gradient-to-r from-premium-yellow to-gold text-deep-black shadow-lg shadow-gold/25 hover:scale-[1.03] cursor-pointer' 
-                            : 'border border-gold text-gold hover:bg-gold hover:text-deep-black cursor-pointer'
+                        : p.isPopular 
+                          ? 'bg-gradient-to-r from-premium-yellow to-gold text-deep-black shadow-lg shadow-gold/25 hover:scale-[1.03] cursor-pointer' 
+                          : 'border border-gold text-gold hover:bg-gold hover:text-deep-black cursor-pointer'
                     }`}
                   >
-                    {loadingPlan === p.id ? (
-                      <>
-                        <Loader className="h-4 w-4 animate-spin text-inherit" />
-                        <span>PROCESSING...</span>
-                      </>
-                    ) : isActivePlan ? (
+                    {isActivePlan ? (
                       <span>PLAN ACTIVE</span>
                     ) : (
                       <span>ACTIVATE MEMBERSHIP</span>
@@ -216,6 +175,60 @@ const PlansPage = () => {
           })}
         </div>
       </div>
+
+      {/* Select payment method */}
+      <PaymentMethodModal
+        isOpen={showPaymentMethodModal}
+        onClose={() => setShowPaymentMethodModal(false)}
+        onSelect={async (method) => {
+          setPaymentMethod(method);
+          setShowPaymentMethodModal(false);
+
+          if (method === 'upi') {
+            // kick off the UPI deep link, then wait for confirmation
+            window.location.href = buildUpiUrl();
+            setShowUpiPaymentModal(true);
+          } else {
+            // cash goes straight to pending verification
+            try {
+              await initiateManualPayment('cash');
+              setShowPendingModal(true);
+            } catch (err) {
+              setError(err.response?.data?.message || 'Failed to start payment. Please try again.');
+            }
+          }
+        }}
+      />
+
+      <UpiPaymentModal
+        isOpen={showUpiPaymentModal}
+        onClose={() => setShowUpiPaymentModal(false)}
+        amount={selectedPlan?.price}
+        planName={selectedPlan?.name}
+        onOpenUpiApp={() => {
+          window.location.href = buildUpiUrl();
+        }}
+        onConfirmPaid={async () => {
+          try {
+            await initiateManualPayment('upi');
+            setShowUpiPaymentModal(false);
+            setShowPendingModal(true);
+          } catch (err) {
+            setError(err.response?.data?.message || 'Failed to confirm payment. Please try again.');
+          }
+        }}
+      />
+
+      <PendingVerificationModal
+        isOpen={showPendingModal}
+        onClose={() => {
+          resetPurchaseFlow();
+          navigate('/dashboard');
+        }}
+        paymentMethod={paymentMethod}
+        planName={selectedPlan?.name}
+        amount={selectedPlan?.price}
+      />
     </div>
   );
 };
