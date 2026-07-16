@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import GlassCard from '../components/GlassCard';
 import { motion } from 'framer-motion';
 import { 
-  ChevronRight, CheckCircle2, Zap, Users, Heart, Star, 
+  ChevronRight, CheckCircle2, Zap, Heart, Star, 
   MapPin, Phone, Mail, MessageSquare, Flame, Trophy, 
   Activity,
   Droplets,
@@ -73,14 +73,29 @@ const LandingPage = () => {
     // { name: 'Ananya Sharma', role: 'Transformation & Nutrition Specialist', exp: '6+ Years', image: 'https://images.unsplash.com/photo-1548690312-e3b507d8c110?q=80&w=400&auto=format&fit=crop' },
   ];
 
-  // const transformations = [
-  //   { name: 'Karan J.', lost: '-18 kg', duration: '4 Months', quote: 'Olympus completely revolutionized my perspective on weight training. The elite coaches push you beyond your limits.', before: '102 kg', after: '84 kg' },
-  //   { name: 'Priya R.', lost: 'Lean Muscle Gain', duration: '6 Months', quote: 'The environment is highly energetic, hygienic, and premium. The standard plan nutrition guidelines changed everything.', before: '21% BF', after: '14% BF' }
+  const transformations = [
+    { name: 'Karan J.', lost: '-18 kg', duration: '4 Months', quote: 'Olympus completely revolutionized my perspective on weight training. The elite coaches push you beyond your limits.', before: '102 kg', after: '84 kg' },
+    { name: 'Priya R.', lost: 'Lean Muscle Gain', duration: '6 Months', quote: 'The environment is highly energetic, hygienic, and premium. The standard plan nutrition guidelines changed everything.', before: '21% BF', after: '14% BF' }
+  ];
+
+  // const testimonials = [
+  //   { name: 'Amit Verma', rating: 5, comment: 'Undoubtedly the best luxury gym in the city. The gold design, glass layout, and cardio gear are truly world-class.', date: 'May 2026' },
+  //   { name: 'Neha Gupta', rating: 5, comment: 'Staff is super polite, and trainers are highly certified. I love the locker rooms and steam sauna after a heavy leg workout.', date: 'April 2026' }
   // ];
 
   const testimonials = [
-    { name: 'Amit Verma', rating: 5, comment: 'Undoubtedly the best luxury gym in the city. The gold design, glass layout, and cardio gear are truly world-class.', date: 'May 2026' },
-    { name: 'Neha Gupta', rating: 5, comment: 'Staff is super polite, and trainers are highly certified. I love the locker rooms and steam sauna after a heavy leg workout.', date: 'April 2026' }
+    {
+      name: 'Arun Kumar',
+      rating: 5,
+      comment: 'The gym is always clean and the equipment is well maintained. The atmosphere keeps me motivated to work out every day.',
+      date: 'June 2026',
+    },
+    {
+      name: 'Athira VK',
+      rating: 5,
+      comment: 'A great place for beginners as well as regular gym-goers. Friendly staff, good machines, and a comfortable workout environment.',
+      date: 'May 2026',
+    },
   ];
 
   return (
@@ -174,20 +189,15 @@ const LandingPage = () => {
             >
               <div className="absolute -top-4 -left-4 w-72 h-72 bg-gold/10 rounded-full blur-3xl"></div>
               <div className="relative border border-gold/20 rounded-2xl overflow-hidden shadow-2xl">
-                {/* <img 
-                  src={trainerPose} 
-                  alt="Back pose of a fitness athlete" 
-                  className="w-full h-[450px] object-cover hover:scale-105 transition-transform duration-700"
-                /> */}
 
-                  <picture>
-                    <source media="(max-width: 640px)" srcSet={trainerPoseMobile} />
-                    <img
-                      src={trainerPoseDesktop}
-                      alt="Back pose of a fitness athlete"
-                      className="w-full h-[450px] object-cover"
-                    />
-                  </picture>
+                <picture>
+                  <source media="(max-width: 640px)" srcSet={trainerPoseMobile} />
+                  <img
+                    src={trainerPoseDesktop}
+                    alt="Back pose of a fitness athlete"
+                    className="w-full h-[450px] object-cover"
+                  />
+                </picture>
 
                 <div className="absolute inset-0 bg-gradient-to-t from-deep-black via-transparent to-transparent"></div>
                 <div className="absolute bottom-6 left-6 right-6 glass p-6 rounded-xl border border-gold/20">
@@ -526,7 +536,7 @@ const LandingPage = () => {
             START YOUR FITNESS <span className="text-gold-gradient">JOURNEY TODAY</span>
           </h2>
           <p className="text-gray-300 text-base max-w-2xl mx-auto font-light">
-            Do not postpone your physical fitness goal. Register, pick your subscription model, verify via Razorpay test mode, and unlock immediate locker, equipment, and coach privileges.
+            Your fitness journey begins with a single step. Sign up, select your preferred membership plan, complete your payment, and after admin verification, enjoy access to our modern training equipment and a motivating workout environment. Join today and start building a stronger, healthier lifestyle.
           </p>
           <div className="pt-4">
             <button

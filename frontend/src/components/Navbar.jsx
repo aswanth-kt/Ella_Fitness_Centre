@@ -56,12 +56,13 @@ const Navbar = () => {
             {/* Common/Guest Links */}
             {!user || user.role === 'client' ? (
               <>
-                <button onClick={() => scrollToSection('hero')} className="cursor-pointer text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-wide">HOME</button>
+                {/* <button onClick={() => scrollToSection('hero')} className="cursor-pointer text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-wide">HOME</button> */}
                 <button onClick={() => scrollToSection('about')} className="cursor-pointer text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-wide">ABOUT</button>
                 <button onClick={() => scrollToSection('facilities')} className="cursor-pointer text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-wide">FACILITIES</button>
                 <button onClick={() => scrollToSection('plans')} className="cursor-pointer text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-wide">PLANS</button>
                 <button onClick={() => scrollToSection('trainers')} className="cursor-pointer text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-wide">TRAINERS</button>
                 <button onClick={() => scrollToSection('gallery')} className="cursor-pointer text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-wide">GALLERY</button>
+                <button onClick={() => scrollToSection('contact')} className="cursor-pointer text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-wide">CONTACT US</button>
               </>
             ) : null}
 
@@ -171,6 +172,12 @@ const Navbar = () => {
                   className="block w-full text-center px-3 py-3 rounded-md text-base font-medium text-gray-300 hover:bg-gold/10 hover:text-gold transition-colors"
                 >
                   GALLERY
+                </button>
+                <button 
+                  onClick={() => scrollToSection('contact')} 
+                  className="block w-full text-center px-3 py-3 rounded-md text-base font-medium text-gray-300 hover:bg-gold/10 hover:text-gold transition-colors"
+                >
+                  CONTACT US
                 </button>
               </>
             ) : null}
