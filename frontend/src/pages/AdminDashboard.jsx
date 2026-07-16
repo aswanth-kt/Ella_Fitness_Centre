@@ -420,12 +420,20 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleAddSubmit = async (e) => {
+  // Add members manually by admin
+  const handleManualAddSubmit = async (e) => {
     e.preventDefault();
     setActionLoading(true);
     setErrorMsg('');
     try {
-      await axios.post('/admin/members', addForm);
+      await Promise.all([
+        axios.post('/admin/members', addForm),
+        axios.post('/payments/initiate-manual', {
+          planName: addForm.membership?.plan,
+          method: addForm.payment?.paymentMethod === 'Online Transaction' ? 'upi' : 'cash',
+        })
+      ]);
+
       setSuccessMsg('Manual gym member profile created and activated!');
       setAddModalOpen(false);
       setAddForm({
@@ -917,13 +925,15 @@ const AdminDashboard = () => {
                     </option>
                   ))}
                 </select>
-                <button
+
+                {/* Manually add user by admin (Temporary its closed) */}
+                {/* <button
                   onClick={() => setAddModalOpen(true)}
                   className="bg-gold hover:bg-gold-hover text-deep-black font-extrabold text-xs tracking-wider px-5 py-3.5 rounded-xl flex items-center space-x-2 cursor-pointer uppercase shadow-md shadow-gold/15"
                 >
                   <Plus className="h-4 w-4" />
                   <span>Add New Member</span>
-                </button>
+                </button> */}
               </div>
             </div>
 
@@ -2052,7 +2062,7 @@ const AdminDashboard = () => {
               </button>
             </div>
 
-            <form onSubmit={handleAddSubmit} className="space-y-6">
+            <form onSubmit={handleManualAddSubmit} className="space-y-6">
               {/* Profile fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>

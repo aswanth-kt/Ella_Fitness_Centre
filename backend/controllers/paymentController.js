@@ -20,8 +20,8 @@ export const initiateManualPayment = async (req, res) => {
       return res.status(400).json({ message: 'Invalid membership plan.' });
     };
 
-    // const manualPaymentId = `MNL-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
-const manualPaymentId = `MNL-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+    const manualPaymentId = `MNL-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+
     const payment = await Payment.create({
       user: req.user._id,
       amount: Number(plan.price.replace(/,/g, '')), // convert string '1,000' to number 1000

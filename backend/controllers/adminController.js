@@ -688,34 +688,6 @@ export const verifyManualPayment = async (req, res) => {
     payment.verifiedAt = new Date();
     await payment.save();
 
-
-    /*
-    console.log("months:", months, "duration mnth:", months.durationMonths)
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const user = await User.findById(payment.user);
-
-    // If membership is still active, extend from current endDate; otherwise start fresh from today
-    const  currentEnd = user.membership.endDate && user.membership.status === 'active'
-    ? new Date(user.membership.endDate)
-    : now;
-    const startBase = currentEnd > now ? currentEnd : now;
-
-    const newEnd = new Date(startBase);
-    newEnd.setHours(0, 0, 0, 0);
-    newEnd.setMonth(newEnd.getMonth() + months);
-    console.log("start date:", now)
-    console.log("end date:", newEnd)
-
-    user.membership = {
-      plan: payment.membershipPlan,
-      startDate: user.membership?.status === 'active' ? user.membership.startDate : now,
-      endDate: newEnd,
-      status: 'active',
-    };
-    await user.save();
-    */
-
     // Extend the member's plan
     const plan = MEMBERSHIP_PLANS[payment.membershipPlan];
     if (!plan) {
