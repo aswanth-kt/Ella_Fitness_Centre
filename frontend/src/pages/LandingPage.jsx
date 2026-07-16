@@ -4,14 +4,16 @@ import { AuthContext } from '../context/AuthContext';
 import GlassCard from '../components/GlassCard';
 import { motion } from 'framer-motion';
 import { 
-  ChevronRight, CheckCircle2, Award, Zap, Users, Heart, Star, 
-  MapPin, Phone, Mail, MessageSquare, Flame, Trophy 
+  ChevronRight, CheckCircle2, Zap, Users, Heart, Star, 
+  MapPin, Phone, Mail, MessageSquare, Flame, Trophy, 
+  Activity
 } from 'lucide-react';
 import banner from '../assets/banner/bannerImage.png'
 import { address, email, google_map_location, gym_first_name, gym_full_name, phone_number, whatsapp_number } from '../constants/constants';
 import { membershipPlans } from '../constants/membershipPlans';
 import GallerySection from '../components/GallerySection';
 import badhushaImg from '../assets/tainerImages/badhusha_trainer.webp';
+import trainerPose from '../assets/tainerImages/trainer-img.webp';
 
 const LandingPage = () => {
   const { user } = useContext(AuthContext);
@@ -40,7 +42,6 @@ const LandingPage = () => {
   const trainers = [
     { name: 'Badhusha', role: 'Elite Strength & Conditioning', exp: '7+ Years', image: badhushaImg },
     // { name: 'Ananya Sharma', role: 'Transformation & Nutrition Specialist', exp: '6+ Years', image: 'https://images.unsplash.com/photo-1548690312-e3b507d8c110?q=80&w=400&auto=format&fit=crop' },
-    // { name: 'Rohan Malhotra', role: 'Calisthenics & Mobility Expert', exp: '7+ Years', image: 'https://images.unsplash.com/photo-1567013127542-490d757e51fc?q=80&w=400&auto=format&fit=crop' }
   ];
 
   // const transformations = [
@@ -145,17 +146,17 @@ const LandingPage = () => {
               <div className="absolute -top-4 -left-4 w-72 h-72 bg-gold/10 rounded-full blur-3xl"></div>
               <div className="relative border border-gold/20 rounded-2xl overflow-hidden shadow-2xl">
                 <img 
-                  src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=600&auto=format&fit=crop" 
-                  alt="Lifting weights" 
+                  src={trainerPose} 
+                  alt="Back pose of a fitness athlete" 
                   className="w-full h-[450px] object-cover hover:scale-105 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-deep-black via-transparent to-transparent"></div>
                 <div className="absolute bottom-6 left-6 right-6 glass p-6 rounded-xl border border-gold/20">
                   <div className="flex items-center space-x-4">
-                    <Award className="h-10 w-10 text-gold shrink-0" />
+                    <Activity className="h-10 w-10 text-gold shrink-0" />
                     <div>
-                      <h4 className="text-white font-bold">CERTIFIED COACHING</h4>
-                      <p className="text-xs text-gray-300 mt-1">Every coach holds internationally accredited exercise science credentials.</p>
+                      <h4 className="text-white font-bold">DEDICATED TRAINING</h4>
+                      <p className="text-xs text-gray-300 mt-1">Stay consistent with personalized support and training.</p>
                     </div>
                   </div>
                 </div>
@@ -347,46 +348,46 @@ const LandingPage = () => {
           </div>
 
           <div
-  className={`grid gap-8 ${
-    trainers.length === 1
-      ? "grid-cols-1 max-w-sm mx-auto"
-      : trainers.length === 2
-      ? "grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto"
-      : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-  }`}
->
-  {trainers.map((t, idx) => (
-    <GlassCard
-      key={idx}
-      className="p-0 overflow-hidden relative group"
-      delay={idx * 0.1}
-    >
-      <div className="h-[320px] overflow-hidden relative">
-        <img
-          src={t.image}
-          alt={t.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-deep-black via-transparent to-transparent" />
-      </div>
+            className={`grid gap-8 ${
+              trainers.length === 1
+                ? "grid-cols-1 max-w-sm mx-auto"
+                : trainers.length === 2
+                ? "grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto"
+                : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+            }`}
+          >
+            {trainers.map((t, idx) => (
+              <GlassCard
+                key={idx}
+                className="p-0 overflow-hidden relative group"
+                delay={idx * 0.1}
+              >
+                <div className="h-[320px] overflow-hidden relative">
+                  <img
+                    src={t.image}
+                    alt={t.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-deep-black via-transparent to-transparent" />
+                </div>
 
-      <div className="p-6">
-        <span className="text-gold font-bold text-xs tracking-wider uppercase block">
-          {t.role}
-        </span>
+                <div className="p-6">
+                  <span className="text-gold font-bold text-xs tracking-wider uppercase block">
+                    {t.role}
+                  </span>
 
-        <h3 className="text-xl font-bold text-white mt-1">
-          {t.name}
-        </h3>
+                  <h3 className="text-xl font-bold text-white mt-1">
+                    {t.name}
+                  </h3>
 
-        <div className="flex justify-between items-center mt-4 pt-4 border-t border-white/5 text-sm">
-          <span className="text-gray-400">Experience</span>
-          <span className="text-white font-medium">{t.exp}</span>
-        </div>
-      </div>
-    </GlassCard>
-  ))}
-</div>
+                  <div className="flex justify-between items-center mt-4 pt-4 border-t border-white/5 text-sm">
+                    <span className="text-gray-400">Experience</span>
+                    <span className="text-white font-medium">{t.exp}</span>
+                  </div>
+                </div>
+              </GlassCard>
+            ))}
+          </div>
         </div>
       </section>
 
