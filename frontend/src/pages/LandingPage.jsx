@@ -13,7 +13,8 @@ import { address, email, google_map_location, gym_first_name, gym_full_name, pho
 import { membershipPlans } from '../constants/membershipPlans';
 import GallerySection from '../components/GallerySection';
 import badhushaImg from '../assets/tainerImages/badhusha_trainer.webp';
-import trainerPose from '../assets/tainerImages/trainer-img.webp';
+import trainerPoseDesktop from '../assets/tainerImages/trainer-img.webp';
+import trainerPoseMobile from '../assets/tainerImages/tainer-img-mobile-version.webp';
 
 const LandingPage = () => {
   const { user } = useContext(AuthContext);
@@ -145,11 +146,21 @@ const LandingPage = () => {
             >
               <div className="absolute -top-4 -left-4 w-72 h-72 bg-gold/10 rounded-full blur-3xl"></div>
               <div className="relative border border-gold/20 rounded-2xl overflow-hidden shadow-2xl">
-                <img 
+                {/* <img 
                   src={trainerPose} 
                   alt="Back pose of a fitness athlete" 
                   className="w-full h-[450px] object-cover hover:scale-105 transition-transform duration-700"
-                />
+                /> */}
+
+                  <picture>
+                    <source media="(max-width: 640px)" srcSet={trainerPoseMobile} />
+                    <img
+                      src={trainerPoseDesktop}
+                      alt="Back pose of a fitness athlete"
+                      className="w-full h-[450px] object-cover"
+                    />
+                  </picture>
+
                 <div className="absolute inset-0 bg-gradient-to-t from-deep-black via-transparent to-transparent"></div>
                 <div className="absolute bottom-6 left-6 right-6 glass p-6 rounded-xl border border-gold/20">
                   <div className="flex items-center space-x-4">
