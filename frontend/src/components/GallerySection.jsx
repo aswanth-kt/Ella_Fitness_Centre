@@ -12,6 +12,8 @@ import gymImage05 from '../assets/gallery/gym_image05.webp';
 import gymImage06 from '../assets/gallery/gym_image06.webp';
 import gymImage07 from '../assets/gallery/gym_image07.webp';
 import gymImage08 from '../assets/gallery/gym_image08.webp';
+import gymImage09 from '../assets/gallery/gym_image09.webp';
+import gymImage10 from '../assets/gallery/gym_image10.webp';
 
 const galleryImages = [
   { src: gymImage01, alt: 'Weight training floor', span: 'row-span-2' },
@@ -20,8 +22,10 @@ const galleryImages = [
   { src: gymImage04, alt: 'Personal training session', span: 'row-span-2' },
   { src: gymImage05, alt: 'Free weights rack', span: '' },
   { src: gymImage06, alt: 'Locker and lounge area', span: '' },
-  { src: gymImage07, alt: 'Group training session', span: 'row-span-2' },
+  { src: gymImage07, alt: 'Gym entrance', span: 'row-span-2' },
   { src: gymImage08, alt: 'Gym entrance and reception', span: '' },
+  { src: gymImage09, alt: 'Gym reception', span: '' },
+  { src: gymImage10, alt: 'Group training session', span: 'row-span-2' },
 ];
 
 const GallerySection = () => {

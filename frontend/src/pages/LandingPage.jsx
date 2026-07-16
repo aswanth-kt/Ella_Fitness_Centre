@@ -6,7 +6,10 @@ import { motion } from 'framer-motion';
 import { 
   ChevronRight, CheckCircle2, Zap, Users, Heart, Star, 
   MapPin, Phone, Mail, MessageSquare, Flame, Trophy, 
-  Activity
+  Activity,
+  Droplets,
+  Music,
+  LayoutGrid
 } from 'lucide-react';
 import banner from '../assets/banner/bannerImage.png'
 import { address, email, google_map_location, gym_first_name, gym_full_name, phone_number, whatsapp_number } from '../constants/constants';
@@ -33,12 +36,37 @@ const LandingPage = () => {
   };
 
   const facilities = [
-    { title: 'Cardio Zone', desc: 'Premium treadmills, ellipticals, and climbmills with high-tech displays.', icon: Heart },
-    { title: 'Weight Training', desc: 'Premium dumbbells up to 70kg, multi-racks, and plate-loaded machines.', icon: Trophy },
-    { title: 'Functional Training', desc: 'Sled tracks, kettlebells, battle ropes, and specialized crossfit cages.', icon: Zap },
-    // { title: 'Locker Facility', desc: 'Keyless electronic lockers, luxury steam showers, and vanity counters.', icon: Shield },
-    { title: 'Personal Training', desc: 'One-on-one sessions with certified elite transformation coaches.', icon: Users }
-  ];
+  {
+    title: 'Cardio Zone',
+    desc: 'Treadmills, cross trainers, exercise bikes, and rowing machines for effective cardio workouts.',
+    icon: Heart,
+  },
+  {
+    title: 'Strength Training',
+    desc: 'Olympic barbells, dumbbells, benches, squat racks, and plate-loaded machines.',
+    icon: Trophy,
+  },
+  {
+    title: 'Functional Training',
+    desc: 'Battle ropes, kettlebells, resistance bands, medicine balls, and an open workout area.',
+    icon: Zap,
+  },
+  {
+    title: 'Drinking Water',
+    desc: 'Clean and purified drinking water available throughout your workout.',
+    icon: Droplets,
+  },
+  {
+    title: 'Music System',
+    desc: 'Energetic music to keep you motivated and enhance your training experience.',
+    icon: Music,
+  },
+  {
+  title: 'Spacious Workout Area',
+  desc: 'A clean and well-organized training environment with ample space for comfortable workouts.',
+  icon: LayoutGrid,
+}
+];
 
   const trainers = [
     { name: 'Badhusha', role: 'Elite Strength & Conditioning', exp: '7+ Years', image: badhushaImg },
