@@ -11,6 +11,7 @@ import banner from '../assets/banner/bannerImage.png'
 import { address, email, google_map_location, gym_first_name, gym_full_name, phone_number, whatsapp_number } from '../constants/constants';
 import { membershipPlans } from '../constants/membershipPlans';
 import GallerySection from '../components/GallerySection';
+import badhushaImg from '../assets/tainerImages/badhusha_trainer.webp';
 
 const LandingPage = () => {
   const { user } = useContext(AuthContext);
@@ -37,15 +38,15 @@ const LandingPage = () => {
   ];
 
   const trainers = [
-    { name: 'Vikram Singh', role: 'Elite Strength & Conditioning', exp: '8+ Years', image: 'https://images.unsplash.com/photo-1605296867304-46d5465a25f1?q=80&w=400&auto=format&fit=crop' },
-    { name: 'Ananya Sharma', role: 'Transformation & Nutrition Specialist', exp: '6+ Years', image: 'https://images.unsplash.com/photo-1548690312-e3b507d8c110?q=80&w=400&auto=format&fit=crop' },
-    { name: 'Rohan Malhotra', role: 'Calisthenics & Mobility Expert', exp: '7+ Years', image: 'https://images.unsplash.com/photo-1567013127542-490d757e51fc?q=80&w=400&auto=format&fit=crop' }
+    { name: 'Badhusha', role: 'Elite Strength & Conditioning', exp: '7+ Years', image: badhushaImg },
+    // { name: 'Ananya Sharma', role: 'Transformation & Nutrition Specialist', exp: '6+ Years', image: 'https://images.unsplash.com/photo-1548690312-e3b507d8c110?q=80&w=400&auto=format&fit=crop' },
+    // { name: 'Rohan Malhotra', role: 'Calisthenics & Mobility Expert', exp: '7+ Years', image: 'https://images.unsplash.com/photo-1567013127542-490d757e51fc?q=80&w=400&auto=format&fit=crop' }
   ];
 
-  const transformations = [
-    { name: 'Karan J.', lost: '-18 kg', duration: '4 Months', quote: 'Olympus completely revolutionized my perspective on weight training. The elite coaches push you beyond your limits.', before: '102 kg', after: '84 kg' },
-    { name: 'Priya R.', lost: 'Lean Muscle Gain', duration: '6 Months', quote: 'The environment is highly energetic, hygienic, and premium. The standard plan nutrition guidelines changed everything.', before: '21% BF', after: '14% BF' }
-  ];
+  // const transformations = [
+  //   { name: 'Karan J.', lost: '-18 kg', duration: '4 Months', quote: 'Olympus completely revolutionized my perspective on weight training. The elite coaches push you beyond your limits.', before: '102 kg', after: '84 kg' },
+  //   { name: 'Priya R.', lost: 'Lean Muscle Gain', duration: '6 Months', quote: 'The environment is highly energetic, hygienic, and premium. The standard plan nutrition guidelines changed everything.', before: '21% BF', after: '14% BF' }
+  // ];
 
   const testimonials = [
     { name: 'Amit Verma', rating: 5, comment: 'Undoubtedly the best luxury gym in the city. The gold design, glass layout, and cardio gear are truly world-class.', date: 'May 2026' },
@@ -345,28 +346,47 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {trainers.map((t, idx) => (
-              <GlassCard key={idx} className="p-0 overflow-hidden relative group" delay={idx * 0.1}>
-                <div className="h-[320px] overflow-hidden relative">
-                  <img 
-                    src={t.image} 
-                    alt={t.name} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-deep-black via-transparent to-transparent"></div>
-                </div>
-                <div className="p-6">
-                  <span className="text-gold font-bold text-xs tracking-wider uppercase block">{t.role}</span>
-                  <h3 className="text-xl font-bold text-white mt-1">{t.name}</h3>
-                  <div className="flex justify-between items-center mt-4 pt-4 border-t border-white/5 text-sm">
-                    <span className="text-gray-400">Experience</span>
-                    <span className="text-white font-medium">{t.exp}</span>
-                  </div>
-                </div>
-              </GlassCard>
-            ))}
-          </div>
+          <div
+  className={`grid gap-8 ${
+    trainers.length === 1
+      ? "grid-cols-1 max-w-sm mx-auto"
+      : trainers.length === 2
+      ? "grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto"
+      : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+  }`}
+>
+  {trainers.map((t, idx) => (
+    <GlassCard
+      key={idx}
+      className="p-0 overflow-hidden relative group"
+      delay={idx * 0.1}
+    >
+      <div className="h-[320px] overflow-hidden relative">
+        <img
+          src={t.image}
+          alt={t.name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-deep-black via-transparent to-transparent" />
+      </div>
+
+      <div className="p-6">
+        <span className="text-gold font-bold text-xs tracking-wider uppercase block">
+          {t.role}
+        </span>
+
+        <h3 className="text-xl font-bold text-white mt-1">
+          {t.name}
+        </h3>
+
+        <div className="flex justify-between items-center mt-4 pt-4 border-t border-white/5 text-sm">
+          <span className="text-gray-400">Experience</span>
+          <span className="text-white font-medium">{t.exp}</span>
+        </div>
+      </div>
+    </GlassCard>
+  ))}
+</div>
         </div>
       </section>
 
@@ -374,7 +394,7 @@ const LandingPage = () => {
       <GallerySection />
 
       {/* 6. Transformation Stories */}
-      <section id="transformations" className="py-24 bg-deep-black relative">
+      {false && (<section id="transformations" className="py-24 bg-deep-black relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <span className="text-gold font-bold tracking-widest text-sm uppercase">SUCCESS</span>
@@ -420,7 +440,7 @@ const LandingPage = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section>)}
 
       {/* 7. Testimonials */}
       <section className="py-24 bg-dark-gray/50 relative">
