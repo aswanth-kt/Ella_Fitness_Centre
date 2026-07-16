@@ -700,9 +700,10 @@ export const verifyManualPayment = async (req, res) => {
 
     const user = await User.findById(payment.user);
 
-    // Use previous end date only if membership is still active (Advance payment)
+    // startDate is always a fresh, unused day
     let startDate = today;
 
+    // Use previous end date + 1 day if membership is still active (Advance payment)
     if (
       user.membership?.status === 'active' &&
       user.membership?.endDate
@@ -711,23 +712,16 @@ export const verifyManualPayment = async (req, res) => {
       previousEnd.setHours(0, 0, 0, 0);
 
       if (previousEnd > today) {
-        startDate = previousEnd;
+        // renew starting the day AFTER the current membership ends
+        startDate = new Date(previousEnd);
+        startDate.setDate(startDate.getDate() + 1);
       };
     };
 
-    // Add 30 days per month
+    // Add 30 days per month (End date)
     const days = months * ONE_MONTH_DURATION; // 3 * 30 = 90 days
     const endDate = new Date(startDate);
-
-    // if new member ? today + (90 - 1) = 90 days : today + 90 = 90 days
-    if (
-      user.membership?.status === 'none' &&
-      user.membership?.plan === 'none'
-    ) {
-      endDate.setDate(endDate.getDate() + (days - 1)); // today + 90 - 1 = 90 days
-    } else {
-      endDate.setDate(endDate.getDate() + (days)); // today(is the last day) + 90 = 91 days
-    };
+    endDate.setDate(endDate.getDate() + (days - 1)) // startDate is always fresh: startDate + 90 - 1 = 90 days
 
     user.membership = {
       plan: payment.membershipPlan,
