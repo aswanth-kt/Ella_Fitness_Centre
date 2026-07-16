@@ -1,11 +1,11 @@
-import React, { useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import GlassCard from '../components/GlassCard';
 import { motion } from 'framer-motion';
 import { 
-  ChevronRight, Play, CheckCircle2, Award, Zap, Shield, Users, Heart, Star, 
-  MapPin, Phone, Mail, MessageSquare, Flame, Trophy, ShieldAlert 
+  ChevronRight, CheckCircle2, Award, Zap, Users, Heart, Star, 
+  MapPin, Phone, Mail, MessageSquare, Flame, Trophy 
 } from 'lucide-react';
 import banner from '../assets/banner/bannerImage.png'
 import { address, email, google_map_location, gym_first_name, gym_full_name, phone_number, whatsapp_number } from '../constants/constants';

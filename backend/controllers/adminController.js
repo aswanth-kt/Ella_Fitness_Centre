@@ -7,6 +7,7 @@ import { sendWhatsAppMessage } from '../services/whatsappService.js';
 import { gym_first_name, gym_full_name } from '../../frontend/src/constants/constants.js';
 import { invoice_pagination_limit, members_pagination_limit, reminder_pagination_limit } from '../const/constants.js';
 import { generateInvoiceNumber } from '../utils/invoiceGenerator.js';
+import { MEMBERSHIP_PLANS, ONE_MONTH_DURATION } from '../const/membershipPlans.js';
 
 // Helper to normalize dates
 const getStartOfDay = (date) => {
@@ -449,7 +450,7 @@ export const triggerExpiryReminders = async (req, res) => {
 // @access  Private/Admin
 export const createMember = async (req, res) => {
   const {
-    name, email, mobile, password, age, gender, address, emergencyContact,
+    name, email, countryCode, mobile, password, age, gender, address, emergencyContact,
     height, weight,
     membership, // { plan, startDate, endDate, status }
     payment // { amount, paymentMethod }
@@ -464,6 +465,7 @@ export const createMember = async (req, res) => {
     const newUser = await User.create({
       name,
       email,
+      countryCode,
       mobile,
       password,
       role: 'client',
@@ -645,5 +647,134 @@ export const sendManualReminder = async (req, res) => {
 
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get all pending_verification payments
+// @route   GET /api/admin/pendings
+// @access  Private/Admin
+export const getPendingVerifications = async (req, res) => {
+  try {
+    const pending = await Payment.find({ status: 'pending_verification' })
+    .populate('user', 'name email countryCode mobile')
+    .sort({ createdAt: -1 });
+
+    res.json(pending);
+
+  } catch (error) {
+    console.error('getPendingVerifications error:', error);
+    res.status(500).json({ message: 'Failed to fetch pending payments.' });
+  }
+};
+
+
+// @desc    Update pending verification to verify
+// @route   POST /api/payments/admin/:id/verify
+// @access  Private/Admin
+export const verifyManualPayment = async (req, res) => {
+  try {
+    const payment = await Payment.findById(req.params.id);
+    if (!payment) return res.status(404).json({ message: 'Payment not found.' });
+    if (payment.status !== 'pending_verification') {
+      return res.status(400).json({ message: `Payment is already ${payment.status}.` });
+    };
+
+    const invoiceNo = await generateInvoiceNumber();
+
+    payment.status = 'paid';
+    payment.paidAt = new Date();
+    payment.invoiceNo = invoiceNo;
+    payment.verifiedBy = req.user._id;
+    payment.verifiedAt = new Date();
+    await payment.save();
+
+    // Extend the member's plan
+    const plan = MEMBERSHIP_PLANS[payment.membershipPlan];
+    if (!plan) {
+      return res.status(400).json({ message: "Invalid membership plan." });
+    }
+
+    const months = plan.durationMonths;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const user = await User.findById(payment.user);
+
+    // Use previous end date only if membership is still active (Advance payment)
+    let startDate = today;
+
+    if (
+      user.membership?.status === 'active' &&
+      user.membership?.endDate
+    ) {
+      const previousEnd = new Date(user.membership.endDate);
+      previousEnd.setHours(0, 0, 0, 0);
+
+      if (previousEnd > today) {
+        startDate = previousEnd;
+      };
+    };
+
+    // Add 30 days per month
+    const days = months * ONE_MONTH_DURATION; // 3 * 30 = 90 days
+    const endDate = new Date(startDate);
+
+    // if new member ? today + (90 - 1) = 90 days : today + 90 = 90 days
+    if (
+      user.membership?.status === 'none' &&
+      user.membership?.plan === 'none'
+    ) {
+      endDate.setDate(endDate.getDate() + (days - 1)); // today + 90 - 1 = 90 days
+    } else {
+      endDate.setDate(endDate.getDate() + (days)); // today(is the last day) + 90 = 91 days
+    };
+
+    user.membership = {
+      plan: payment.membershipPlan,
+      startDate: user.membership?.status === 'active'
+        ? user.membership?.startDate
+        : today,
+      endDate,
+      status: 'active',
+    };
+    await user.save();
+
+    res.json({
+      message: 'Payment verified and membership activated.',
+      payment
+    })
+
+  } catch (error) {
+    console.error('verifyManualPayment error:', error);
+    res.status(500).json({ message: 'Failed to verify payment.' });
+  }
+};
+
+// @desc    Update pending verification to reject
+// @route   POST /api/payments/admin/:id/reject
+// @access  Private/Admin
+export const rejectManualPayment = async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const payment = await Payment.findById(req.params.id);
+    if (!payment) return res.status(404).json({ message: 'Payment not found.' });
+    if (payment.status !== 'pending_verification') {
+      return res.status(400).json({ message: `Payment is already ${payment.status}.` });
+    };
+
+    payment.status = 'failed';
+    payment.rejectionReason = reason || 'Rejected by admin.';
+    payment.verifiedBy = req.user._id;
+    payment.verifiedAt = new Date();
+    await payment.save();
+
+    res.json({
+      message: 'Payment rejected.', 
+      payment
+    })
+
+  } catch (error) {
+    console.error('rejectManualPayment error:', error);
+    res.status(500).json({ message: 'Failed to reject payment.' });
   }
 };

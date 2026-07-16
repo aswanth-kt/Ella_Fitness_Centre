@@ -1,9 +1,9 @@
-import React, { useState, useContext, useEffect } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Dumbbell, Mail, Lock, Loader, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Loader, AlertCircle } from 'lucide-react';
 import axios from '../api/axios.js';
-import { gym_first_name, gym_second_name } from '../constants/constants.js';
+import { gym_first_name } from '../constants/constants.js';
 
 const LoginPage = () => {
   const { user, login } = useContext(AuthContext);

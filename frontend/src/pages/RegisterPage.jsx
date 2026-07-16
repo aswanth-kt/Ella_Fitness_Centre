@@ -1,7 +1,7 @@
 import { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { User as UserIcon, Mail, Phone, Lock, Calendar, MapPin, Heart, Loader, AlertCircle } from 'lucide-react';
+import { User as UserIcon, Mail, Lock, Calendar, MapPin, Heart, Loader, AlertCircle } from 'lucide-react';
 import { healthIssuesList } from '../constants/healthIssues';
 import { validateAge, validateCountryCode, validateEmail, validateMobileNumber, validatePassword } from '../helpers/validators';
 import { countryCodes } from '../constants/countryCodes';
