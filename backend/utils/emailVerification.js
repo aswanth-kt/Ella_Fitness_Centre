@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { gym_full_name, gym_slogan } from "../const/gymData";
+import { gym_full_name, gym_slogan } from "../const/gymData.js";
 
 const sendNodeMailer = async (email, otp) => {
   try {
