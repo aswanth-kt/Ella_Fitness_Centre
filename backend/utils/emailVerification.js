@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { gym_full_name, gym_slogan } from "../const/gymData";
 
 const sendNodeMailer = async (email, otp) => {
   try {
@@ -40,10 +41,10 @@ const sendNodeMailer = async (email, otp) => {
                           <tr>
                               <td align="center" style="background:#111827;padding:30px;">
                                   <h1 style="color:#fbbf24;margin:0;font-size:28px;">
-                                      Ella's Fitness Center
+                                      ${gym_full_name}
                                   </h1>
                                   <p style="color:#d1d5db;margin-top:8px;font-size:14px;">
-                                      Strength • Discipline • Transformation
+                                      ${gym_slogan}
                                   </p>
                               </td>
                           </tr>
@@ -91,7 +92,7 @@ const sendNodeMailer = async (email, otp) => {
                           <tr>
                               <td align="center" style="background:#111827;padding:20px;">
                                   <p style="margin:0;color:#9ca3af;font-size:13px;">
-                                      © ${new Date().getFullYear()} Ella's Fitness Center
+                                      © ${new Date().getFullYear()} ${gym_full_name}
                                   </p>
                                   <p style="margin-top:8px;color:#9ca3af;font-size:12px;">
                                       Train Hard. Stay Strong. Live Healthy.
