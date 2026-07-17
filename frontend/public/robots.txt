@@ -1,0 +1,17 @@
+User-agent: *
+
+# Allow all public pages
+Allow: /
+
+# Block private application routes
+Disallow: /admin
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /login
+Disallow: /login/
+Disallow: /register
+Disallow: /register/
+
+# Sitemap location
+Sitemap: https://www.dcorefitness.in/sitemap.xml
