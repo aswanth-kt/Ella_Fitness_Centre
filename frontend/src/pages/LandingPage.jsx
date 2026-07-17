@@ -78,11 +78,6 @@ const LandingPage = () => {
     { name: 'Priya R.', lost: 'Lean Muscle Gain', duration: '6 Months', quote: 'The environment is highly energetic, hygienic, and premium. The standard plan nutrition guidelines changed everything.', before: '21% BF', after: '14% BF' }
   ];
 
-  // const testimonials = [
-  //   { name: 'Amit Verma', rating: 5, comment: 'Undoubtedly the best luxury gym in the city. The gold design, glass layout, and cardio gear are truly world-class.', date: 'May 2026' },
-  //   { name: 'Neha Gupta', rating: 5, comment: 'Staff is super polite, and trainers are highly certified. I love the locker rooms and steam sauna after a heavy leg workout.', date: 'April 2026' }
-  // ];
-
   const testimonials = [
     {
       name: 'Arun Kumar',

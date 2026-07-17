@@ -5,6 +5,8 @@ import {
   CreditCard, 
   CheckCircle, AlertTriangle, AlertCircle, Edit3, Loader, CheckSquare,
   Receipt,
+  EyeOff,
+  Eye,
 } from 'lucide-react';
 import axios from '../api/axios.js';
 import { attendence_pagination_limit, gym_first_name, upiUrl } from '../constants/constants';
@@ -67,6 +69,9 @@ const ClientDashboard = () => {
 
   // Receipt states
   const [showReceipt, setShowReceipt] = useState(false);
+
+  // Hide or Show password
+  const [visible, setVisible] = useState(false)
 
   // Initialize edit form when user loads
   useEffect(() => {
@@ -791,13 +796,28 @@ const ClientDashboard = () => {
               {/* Password change */}
               <div className="border-t border-gold/10 pt-6 mt-4">
                 <label className="block text-xs font-bold tracking-wider text-gold uppercase mb-2">Change Password (Leave blank to keep current)</label>
-                <input
-                  type="password"
-                  value={editForm.password}
-                  onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-                  placeholder="New password (min 6 characters)"
-                  className="block w-full px-4 py-3 bg-black/40 border border-gold/30 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-colors text-sm"
-                />
+                <div className="relative">
+                  <input
+                    type={visible ? 'text' : 'password'}
+                    value={editForm.password}
+                    onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                    placeholder="New password (min 6 characters)"
+                    className="block w-full px-4 py-3 bg-black/40 border border-gold/30 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-colors text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setVisible((v) => !v)}
+                    aria-label={visible ? "Hide password" : "Show password"}
+                    aria-pressed={visible}
+                    className="absolute inset-y-0 right-4 flex items-center text-white"
+                  >
+                    {visible ? (
+                      <EyeOff size={18} strokeWidth={2} style={{ color: "#F8FAFC" }} />
+                    ) : (
+                      <Eye size={18} strokeWidth={2} style={{ color: "#F8FAFC" }} />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div className="flex space-x-4">
@@ -828,7 +848,7 @@ const ClientDashboard = () => {
         )}
       </div>
 
-      {/*  Select payment method */}
+      {/*  Select payment method - 'UPI' / 'CASH' */}
       <PaymentMethodModal
         isOpen={showPaymentMethodModal}
         onClose={() => setShowPaymentMethodModal(false)}
@@ -856,6 +876,7 @@ const ClientDashboard = () => {
         }}
       />
 
+      {/* UPI model popup */}
       <UpiPaymentModal
         isOpen={showUpiPaymentModal}
         onClose={() => setShowUpiPaymentModal(false)}
@@ -875,6 +896,7 @@ const ClientDashboard = () => {
         }}
       />
 
+      {/* Pending verification model popup */}
       <PendingVerificationModal
         isOpen={showPendingModal}
         onClose={() => {
@@ -928,14 +950,6 @@ const ClientDashboard = () => {
                       ))}
                     </ul>
                   </div>
-
-                  {/* <button
-                    disabled={loadingPlan !== ''}
-                    onClick={() => handleRenewalPurchase(plan.id)}
-                    className="w-full mt-6 py-2.5 bg-gradient-to-r from-premium-yellow to-gold text-deep-black font-bold text-xs tracking-wider rounded-xl hover:scale-[1.02] transition-transform cursor-pointer"
-                  >
-                    {loadingPlan === plan.id ? 'PROCESSING...' : 'ACTIVATE'}
-                  </button> */}
 
                   <button
                     disabled={loadingPlan !== ''}

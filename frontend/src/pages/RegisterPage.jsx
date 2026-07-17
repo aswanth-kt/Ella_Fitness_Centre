@@ -1,7 +1,7 @@
 import { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { User as UserIcon, Mail, Lock, Calendar, MapPin, Heart, Loader, AlertCircle } from 'lucide-react';
+import { User as UserIcon, Mail, Lock, Calendar, MapPin, Heart, Loader, AlertCircle, EyeOff, Eye } from 'lucide-react';
 import { healthIssuesList } from '../constants/healthIssues';
 import { validateAge, validateCountryCode, validateEmail, validateMobileNumber, validatePassword } from '../helpers/validators';
 import { countryCodes } from '../constants/countryCodes';
@@ -27,6 +27,7 @@ const RegisterPage = () => {
   const [hasHealthIssue, setHasHealthIssue] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [visible, setVisible] = useState(false);
 
   const navigate = useNavigate();
 
@@ -126,14 +127,6 @@ const RegisterPage = () => {
       <div className="max-w-xl w-full z-10">
         {/* Branding header */}
         <div className="text-center mb-6">
-          {/* <Link to="/" className="inline-flex items-center space-x-2 mb-4">
-            <div className="bg-gradient-to-br from-premium-yellow to-gold p-2 rounded-lg text-deep-black">
-              <Dumbbell className="h-6 w-6" />
-            </div>
-            <span className="font-serif text-2xl font-bold tracking-wider text-gold-gradient">
-              {gym_first_name}<span className="text-white font-sans text-sm font-normal tracking-widest ml-1 uppercase">{gym_second_name}</span>
-            </span>
-          </Link> */}
           
           <h2 className="text-3xl font-extrabold text-white">
             Create Your Account
@@ -202,19 +195,6 @@ const RegisterPage = () => {
                   Mobile Number *
                 </label>
                 <div className="relative">
-                  {/* <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500">
-                    <Phone className="h-5 w-5" />
-                  </div> */}
-                  {/* <input
-                    type="tel"
-                    name="mobile"
-                    required
-                    value={formData.mobile}
-                    onChange={handleChange}
-                    className="block w-full pl-11 pr-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-colors text-sm"
-                    placeholder="9876543210"
-                  /> */}
-
                   <div className="flex gap-2">
                     <select
                       value={formData.countryCode || "+91"}
@@ -346,7 +326,7 @@ const RegisterPage = () => {
                     <Lock className="h-5 w-5" />
                   </div>
                   <input
-                    type="password"
+                    type={visible ? 'text' : 'password'}
                     name="password"
                     required
                     value={formData.password}
@@ -354,6 +334,20 @@ const RegisterPage = () => {
                     className="block w-full pl-11 pr-4 py-3 bg-black/40 border border-gold/15 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-colors text-sm"
                     placeholder="••••••"
                   />
+
+                  <button
+                    type="button"
+                    onClick={() => setVisible((v) => !v)}
+                    aria-label={visible ? "Hide password" : "Show password"}
+                    aria-pressed={visible}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 hover:text-slate-700 focus:outline-none"
+                  >
+                    {visible ? (
+                      <EyeOff size={18} strokeWidth={2} style={{ color: "#F8FAFC" }} />
+                    ) : (
+                      <Eye size={18} strokeWidth={2} style={{ color: "#F8FAFC" }} />
+                    )}
+                  </button>
                 </div>
               </div>
 

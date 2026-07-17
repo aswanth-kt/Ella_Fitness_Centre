@@ -1,7 +1,7 @@
 import { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Mail, Lock, Loader, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Loader, AlertCircle, EyeOff, Eye } from 'lucide-react';
 import axios from '../api/axios.js';
 import { gym_first_name } from '../constants/constants.js';
 
@@ -24,6 +24,11 @@ const LoginPage = () => {
 const [forgotSuccessMessage, setForgotSuccessMessage] = useState('');
 const [forgotError, setForgotError] = useState('');
 const [forgotLoading, setForgotLoading] = useState(false);
+
+// Hide / Show password
+const [visible, setVisible] = useState(false);
+const [confirmVisible, setConfirmVisible] = useState(false);
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -142,14 +147,6 @@ const [forgotLoading, setForgotLoading] = useState(false);
       <div className="max-w-md w-full z-10">
         {/* Branding header */}
         <div className="text-center mb-8">
-          {/* <Link to="/" className="inline-flex items-center space-x-2 mb-4">
-            <div className="bg-gradient-to-br from-premium-yellow to-gold p-2 rounded-lg text-deep-black">
-              <Dumbbell className="h-6 w-6" />
-            </div>
-            <span className="font-serif text-2xl font-bold tracking-wider text-gold-gradient">
-              {gym_first_name}<span className="text-white font-sans text-sm font-normal tracking-widest ml-1 uppercase">{gym_second_name}</span>
-            </span>
-          </Link> */}
           
           <h2 className="text-3xl font-extrabold text-white">
             {forgotMode ? 'Recover Password' : 'Welcome Back'}
@@ -215,13 +212,26 @@ const [forgotLoading, setForgotLoading] = useState(false);
                     <Lock className="h-5 w-5" />
                   </div>
                   <input
-                    type="password"
+                    type={visible ? 'text' : 'password'}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="block w-full pl-11 pr-4 py-3.5 bg-black/40 border border-gold/15 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-colors"
                     placeholder="••••••••"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setVisible((v) => !v)}
+                    aria-label={visible ? "Hide password" : "Show password"}
+                    aria-pressed={visible}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 hover:text-slate-700 focus:outline-none"
+                  >
+                    {visible ? (
+                      <EyeOff size={18} strokeWidth={2} style={{ color: "#F8FAFC" }} />
+                    ) : (
+                      <Eye size={18} strokeWidth={2} style={{ color: "#F8FAFC" }} />
+                    )}
+                  </button>
                 </div>
               </div>
 
@@ -323,14 +333,29 @@ const [forgotLoading, setForgotLoading] = useState(false);
                       New Password
                     </label>
 
-                    <input
-                      type="password"
-                      required
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="block w-full px-4 py-3.5 bg-black/40 border border-gold/15 rounded-xl text-white focus:outline-none focus:border-gold"
-                      placeholder="Enter new password"
-                    />
+                    <div className='relative'>
+                      <input
+                        type={visible ? 'text' : 'password'}
+                        required
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="block w-full px-4 py-3.5 bg-black/40 border border-gold/15 rounded-xl text-white focus:outline-none focus:border-gold"
+                        placeholder="Enter new password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setVisible((v) => !v)}
+                        aria-label={visible ? "Hide password" : "Show password"}
+                        aria-pressed={visible}
+                        className="absolute inset-y-0 right-4 flex items-center text-white"
+                      >
+                        {visible ? (
+                          <EyeOff size={18} strokeWidth={2} style={{ color: "#F8FAFC" }} />
+                        ) : (
+                          <Eye size={18} strokeWidth={2} style={{ color: "#F8FAFC" }} />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <div>
@@ -338,14 +363,29 @@ const [forgotLoading, setForgotLoading] = useState(false);
                       Confirm Password
                     </label>
 
-                    <input
-                      type="password"
-                      required
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="block w-full px-4 py-3.5 bg-black/40 border border-gold/15 rounded-xl text-white focus:outline-none focus:border-gold"
-                      placeholder="Confirm password"
-                    />
+                    <div className="relative">
+                      <input
+                        type={confirmVisible ? 'text' : 'password'}
+                        required
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="block w-full px-4 py-3.5 bg-black/40 border border-gold/15 rounded-xl text-white focus:outline-none focus:border-gold"
+                        placeholder="Confirm password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setConfirmVisible((v) => !v)}
+                        aria-label={confirmVisible ? "Hide password" : "Show password"}
+                        aria-pressed={confirmVisible}
+                        className="absolute inset-y-0 right-4 flex items-center text-white"
+                      >
+                        {confirmVisible ? (
+                          <EyeOff size={18} strokeWidth={2} style={{ color: "#F8FAFC" }} />
+                        ) : (
+                          <Eye size={18} strokeWidth={2} style={{ color: "#F8FAFC" }} />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <button
