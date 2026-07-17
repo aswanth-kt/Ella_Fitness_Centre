@@ -48,7 +48,7 @@ export const getDashboardStats = async (req, res) => {
       status: 'Present'
     });
 
-    const todayTotalAbsent = Math.max(0, totalMembers - todayTotalPresent);
+    const todayTotalAbsent = Math.max(0, activeMembers - todayTotalPresent);
 
     // Monthly revenue (current month)
     const firstDayOfMonth = new Date();
