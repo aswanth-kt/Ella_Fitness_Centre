@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
   Shield, Users, CheckCircle, CheckCircle2, AlertTriangle, Calendar, 
   IndianRupee, Search, Edit3, Trash2, Loader, 
-  RefreshCw, AlertCircle, Plus, CreditCard,
+  RefreshCw, AlertCircle, CreditCard,
   Check, Hourglass, XCircle, Smartphone, Banknote, ThumbsUp,
 } from 'lucide-react';
 import axios from '../api/axios.js';
@@ -10,7 +10,7 @@ import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip 
 } from 'recharts';
-import { attendence_pagination_limit, gym_first_name, invoice_pagination_limit, members_pagination_limit, reminder_pagination_limit } from '../constants/constants.js';
+import { attendence_pagination_limit, gym_first_name, invoice_pagination_limit, members_pagination_limit, pending_payment_pagination_limit, reminder_pagination_limit } from '../constants/constants.js';
 import Pagination from '../components/Pagination.jsx';
 import { membershipPlans } from '../constants/membershipPlans.js';
 import { countryCodes } from '../constants/countryCodes.js';
@@ -95,6 +95,9 @@ const AdminDashboard = () => {
   // Reminder tab
   const [reminderPage, setReminderPage] = useState(1);
   const [reminderTotalPage, setReminderTotalPage] = useState(1);
+  // Pending payments
+  const [pendingPaymentPage, setPendingPaymentPage] = useState(1);
+  const [pendingPaymentTotalPage, setPendingPaymentTotalPage] = useState(1);
 
   // Pending Payment Verifications (manual UPI/Cash renewals awaiting admin approval)
   const [pendingVerifications, setPendingVerifications] = useState([]);
@@ -103,6 +106,7 @@ const AdminDashboard = () => {
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectingPayment, setRejectingPayment] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [pendingVerificationsLength, setPendingVerificationsLength] = useState(0)
 
 
   // Load stats and database entities
@@ -176,8 +180,15 @@ const AdminDashboard = () => {
   const fetchPendingVerifications = async () => {
     setVerificationLoading(true);
     try {
-      const { data } = await axios.get('/admin/pending');
-      setPendingVerifications(data);
+      const { data } = await axios.get('/admin/pending', {
+        params: { pendingPaymentPage }
+      });
+      
+      setPendingVerifications(data.pending);
+      setPendingPaymentTotalPage(data.totalPage);
+      setPendingPaymentPage(data.page);
+      setPendingVerificationsLength(data.totalPendings)
+
     } catch (err) {
       console.error('Error loading pending payment verifications:', err);
     } finally {
@@ -252,7 +263,7 @@ const AdminDashboard = () => {
     if (activeTab === 'verifications') {
       fetchPendingVerifications();
     }
-  }, [activeTab]);
+  }, [activeTab, pendingPaymentPage]);
 
   // Mark manual WhatsApp renewal reminder
   const sendManualWhatsApp = async (userId) => {
@@ -535,7 +546,7 @@ const AdminDashboard = () => {
               <span>{tab.label}</span>
               {tab.id === "verifications" && pendingVerifications.length > 0 && (
                 <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-extrabold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
-                  {pendingVerifications.length}
+                  {pendingVerificationsLength}
                 </span>
               )}
             </button>
@@ -1647,6 +1658,15 @@ const AdminDashboard = () => {
                       );
                     })
                   )}
+                  <Pagination
+                    current={pendingPaymentPage}
+                    total={pendingPaymentTotalPage}
+                    totalItems={pendingVerifications.length}
+                    item="pending payments"
+                    perPage={pending_payment_pagination_limit}
+                    onPageChange={(page) => setPendingPaymentPage(page)}
+                    colSpan={7}
+                  />
                 </tbody>
               </table>
             </div>

@@ -5,7 +5,7 @@ import Notification from '../models/Notification.js';
 import { validateCountryCode, validateEmail, validateMobileNumber } from '../middleware/validatorsMiddleware.js';
 import { sendWhatsAppMessage } from '../services/whatsappService.js';
 import { gym_first_name, gym_full_name } from '../../frontend/src/constants/constants.js';
-import { invoice_pagination_limit, members_pagination_limit, reminder_pagination_limit } from '../const/constants.js';
+import { invoice_pagination_limit, members_pagination_limit, pending_payment_pagination_limit, reminder_pagination_limit } from '../const/constants.js';
 import { generateInvoiceNumber } from '../utils/invoiceGenerator.js';
 import { MEMBERSHIP_PLANS, ONE_MONTH_DURATION } from '../const/membershipPlans.js';
 
@@ -654,12 +654,27 @@ export const sendManualReminder = async (req, res) => {
 // @route   GET /api/admin/pendings
 // @access  Private/Admin
 export const getPendingVerifications = async (req, res) => {
+  const { pendingPaymentPage } = req.query;
   try {
+    const page = Number(pendingPaymentPage) || 1;
+    const limit = pending_payment_pagination_limit;
+    const skip = (page - 1) * limit;
+
     const pending = await Payment.find({ status: 'pending_verification' })
     .populate('user', 'name email countryCode mobile')
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
 
-    res.json(pending);
+    const totalPendings = await Payment.countDocuments({ status: 'pending_verification' });
+    const totalPage = Math.ceil(totalPendings / limit);
+
+    res.json({
+      pending,
+      page, 
+      totalPage,
+      totalPendings
+    });
 
   } catch (error) {
     console.error('getPendingVerifications error:', error);

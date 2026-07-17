@@ -15,7 +15,7 @@ const normalizeDate = (dateStr) => {
 export const getMyAttendance = async (req, res) => {
   const { attendancePage } = req.query;
   try {
-    const page = Number(attendancePage);
+    const page = Number(attendancePage) || 1;
     const limit = attendence_pagination_limit;
     const skip = (page - 1) * limit;
 
@@ -227,7 +227,7 @@ export const getDailyAttendance = async (req, res) => {
   const targetDate = normalizeDate(req.query.date);
 
   try {
-    const page = Number(req.query.attendancePage);
+    const page = Number(req.query.attendancePage) || 1;
     const limit = attendence_pagination_limit;
     const skip = (page - 1) * limit;
 
