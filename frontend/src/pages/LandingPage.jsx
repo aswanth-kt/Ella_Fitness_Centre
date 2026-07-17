@@ -229,7 +229,7 @@ const LandingPage = () => {
               <div className="grid grid-cols-2 gap-6 pt-4">
                 <div className="flex items-center space-x-3">
                   <CheckCircle2 className="h-5 w-5 text-gold shrink-0" />
-                  <span className="text-sm font-medium text-white">Luxury Steam Saunas</span>
+                  <span className="text-sm font-medium text-white">Quality Fitness Equipment</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <CheckCircle2 className="h-5 w-5 text-gold shrink-0" />
@@ -237,11 +237,11 @@ const LandingPage = () => {
                 </div>
                 <div className="flex items-center space-x-3">
                   <CheckCircle2 className="h-5 w-5 text-gold shrink-0" />
-                  <span className="text-sm font-medium text-white">Custom Nutrition Desk</span>
+                  <span className="text-sm font-medium text-white">Functional Training Zone</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <CheckCircle2 className="h-5 w-5 text-gold shrink-0" />
-                  <span className="text-sm font-medium text-white">VIP Cardiorespiratory Deck</span>
+                  <span className="text-sm font-medium text-white">Friendly & Supportive Atmosphere</span>
                 </div>
               </div>
             </motion.div>
