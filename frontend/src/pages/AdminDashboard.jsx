@@ -1854,8 +1854,9 @@ const AdminDashboard = () => {
                 />
               </div>
 
+              {/* This code is change due to razorpay option remove */}
               {/* Confirmation Checkbox */}
-              <div className="p-4 bg-gold/5 border border-gold/20 rounded-xl">
+              {/* <div className="p-4 bg-gold/5 border border-gold/20 rounded-xl">
                 <label className="flex items-start gap-3 cursor-pointer group">
                   <div className="relative flex-shrink-0 mt-0.5">
                     <input
@@ -1881,16 +1882,16 @@ const AdminDashboard = () => {
                     </span>
                   </div>
                 </label>
-              </div>
+              </div> */}
 
               {/* Fields — locked/unlocked based on membershipConfirmed */}
-              <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 transition-all duration-300 ${
+              {/* <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 transition-all duration-300 ${
                 !membershipConfirmed ? 'opacity-40 pointer-events-none select-none' : 'opacity-100'
               }`}>
-              </div>
+              </div> */}
 
               {/* Membership adjustment fields */}
-              <div className="border-t border-gold/10 pt-5 space-y-4">
+              {/* <div className="border-t border-gold/10 pt-5 space-y-4">
                 <span className="block text-xs font-bold text-gold uppercase tracking-wider">
                   Membership Validity Overrides
                 </span>
@@ -1989,7 +1990,6 @@ const AdminDashboard = () => {
                     />
                   </div>
 
-                  {/* Amount Paid */}
                   <div>
                     <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
                       Amount Paid (₹)
@@ -2012,7 +2012,6 @@ const AdminDashboard = () => {
                     />
                   </div>
 
-                  {/* Payment Method */}
                   <div>
                     <label className="block text-xs font-bold text-gray-400 uppercase mb-2">
                       Payment Method
@@ -2038,7 +2037,7 @@ const AdminDashboard = () => {
                     </select>
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               {/* Submit Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 border-t border-white/5">
