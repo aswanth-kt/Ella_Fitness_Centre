@@ -1854,7 +1854,7 @@ const AdminDashboard = () => {
                 />
               </div>
 
-              {/* This code is change due to razorpay option remove */}
+              {/* This code is commented-out due to razorpay option remove */}
               {/* Confirmation Checkbox */}
               {/* <div className="p-4 bg-gold/5 border border-gold/20 rounded-xl">
                 <label className="flex items-start gap-3 cursor-pointer group">
