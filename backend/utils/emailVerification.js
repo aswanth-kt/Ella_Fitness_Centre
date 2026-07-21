@@ -22,7 +22,7 @@ const sendNodeMailer = async (email, otp) => {
     const mailOptions = {
       from: process.env.NODEMAILER_EMAIL,
       to: email,
-      subject: "Password Reset OTP - Ella's Fitness Center",
+      subject: `Password Reset OTP - ${gym_full_name}`,
       text: `Your OTP is ${otp}`,
       html: `
       <!DOCTYPE html>
