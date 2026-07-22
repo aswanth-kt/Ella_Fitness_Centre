@@ -62,7 +62,7 @@ const Navbar = () => {
                 <button onClick={() => scrollToSection('plans')} className="cursor-pointer text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-wide">PLANS</button>
                 <button onClick={() => scrollToSection('trainers')} className="cursor-pointer text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-wide">TRAINERS</button>
                 <button onClick={() => scrollToSection('gallery')} className="cursor-pointer text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-wide">GALLERY</button>
-                <button onClick={() => scrollToSection('contact')} className="cursor-pointer text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-wide">CONTACT US</button>
+                <button onClick={() => scrollToSection('contact')} className="cursor-pointer text-gray-300 hover:text-gold transition-colors font-medium text-sm tracking-wide">CONTACT</button>
               </>
             ) : null}
 
@@ -177,7 +177,7 @@ const Navbar = () => {
                   onClick={() => scrollToSection('contact')} 
                   className="block w-full text-center px-3 py-3 rounded-md text-base font-medium text-gray-300 hover:bg-gold/10 hover:text-gold transition-colors"
                 >
-                  CONTACT US
+                  CONTACT
                 </button>
               </>
             ) : null}
