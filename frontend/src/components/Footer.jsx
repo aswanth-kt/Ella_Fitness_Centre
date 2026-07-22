@@ -123,9 +123,8 @@ const Footer = () => {
         <div className="border-t border-gold/10 pt-8 mt-12 flex flex-col md:flex-row justify-between items-center text-xs">
           <p>&copy; {currentYear} {gym_first_name} Gym. All rights reserved. Designed for Premium Fitness.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
-            <a href="#privacy" className="hover:text-gold transition-colors">Privacy Policy</a>
-            <a href="#terms" className="hover:text-gold transition-colors">Terms of Service</a>
-            <a href="#refund" className="hover:text-gold transition-colors">Refund Policy</a>
+            <Link to="/privacy-policy" className="hover:text-gold transition-colors">Privacy Policy</Link>
+            <Link to="/terms-and-conditions" className="hover:text-gold transition-colors">Terms & Conditions</Link>
           </div>
         </div>
       </div>

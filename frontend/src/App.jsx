@@ -11,6 +11,8 @@ import RegisterPage from './pages/RegisterPage';
 import PlansPage from './pages/PlansPage';
 import ClientDashboard from './pages/ClientDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsAndConditions from './pages/TermsAndConditions';
 import WhatsAppButton from './components/WhatsAppButton';
 
 // Custom component to conditionally render Footer
@@ -30,6 +32,8 @@ const AppContent = () => {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
           
           {/* Protected Client Routes */}
           <Route 
